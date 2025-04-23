@@ -16,6 +16,20 @@ function BottomNavBar() {
                     <Home size={24} />
                     <span className="text-xs font-medium">Home</span>
                 </NavLink>
+                    
+                    {/* Analysis */}
+                <NavLink
+                    to="/analysis"
+                    className={`flex flex-col items-center space-y-0.5 ${location.pathname === "analysis" ? "text-emerald-600" : "text-gray-500"}`}>
+                    <Home size={24} />
+                    <span className="text-xs font-medium">Analysis</span>
+                </NavLink>
+                <NavLink
+                    to="/analysis"
+                    className={`flex flex-col items-center space-y-0.5 ${location.pathname === "analysis" ? "text-emerald-600" : "text-gray-500"}`}>
+                    <Home size={24} />
+                    <span className="text-xs font-medium">Analysis</span>
+                </NavLink>
 
                 {/* Add */}
                 <div className="absolute left-1/2 flex -translate-x-1/2 -translate-y-3 flex-col items-center space-y-1">

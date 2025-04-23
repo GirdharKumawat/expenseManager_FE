@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./app/Home.jsx";
+import ExpenseAnalysisPage   from "./app/ExpenseAnalysisPage.jsx";
 import Signup from "@/app/Signup.jsx";
 import Login from "@/app/Login.jsx";
 import { Outlet } from "react-router";
@@ -7,7 +8,7 @@ import BottomNavBar from "@/components/BottomNavBar.jsx";
 import HeadNavBar from "@/components/HeadNavBar.jsx";
 import AddExpense from "@/app/AddExpense.jsx";
 import Account from "@/app/Account.jsx";
-
+ 
 /**
  * Layout with Bottom Navigation Bar
  */
@@ -41,6 +42,7 @@ function App() {
                     <Route element={<LayoutWithBottomNavBar />}>
                         <Route path="/" element={<Home />} />
                         <Route path="/account" element={<Account />} />
+                        <Route path="/analysis" element={<ExpenseAnalysisPage/>} />
                     </Route>
                 </Route>
 
