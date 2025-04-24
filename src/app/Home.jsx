@@ -2,26 +2,31 @@ import { useNavigate } from "react-router-dom";
 import ExpenseCard from "../components/ExpenseCard";
 import { useEffect, useState } from "react";
 import API_ENDPOINT from "../key";
+
 const API = `${API_ENDPOINT}api/get/expenses`;
 const API_DELETE = `${API_ENDPOINT}api/delete/expense/`;
 const REFRESH_API = `${API_ENDPOINT}api/token/refresh/`;
 
 function Home() {
     const [expenses, setExpenses] = useState([]);
+    const [filteredExpenses, setFilteredExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [deleteLoading, setDeleteLoading] = useState(false);
-    const [category, setCategory] = useState("");
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [category, setCategory] = useState("all");
+
     const navigate = useNavigate();
+
     const getAccessToken = () => localStorage.getItem("accessToken");
     const getRefreshToken = () => localStorage.getItem("refreshToken");
+
     const IsAuthenticated = () => {
         const accessToken = getAccessToken();
         const refreshToken = getRefreshToken();
-        if (!accessToken || !refreshToken) return false;
-        return true;
+        return accessToken && refreshToken;
     };
+
     const isAuthenticated = IsAuthenticated();
+
     const fetchExpenses = async () => {
         let accessToken = getAccessToken();
 
@@ -35,19 +40,19 @@ function Home() {
             });
 
             if (response.status === 401) {
-                // Token expired → Try refreshing
                 const refreshed = await refreshAccessToken();
-                console.log("function call refreshAccessToken    ");
                 if (refreshed) {
-                    return fetchExpenses(); // Retry with new token
+                    return fetchExpenses();
                 } else {
-                    navigate("/login"); // Redirect to login if refresh fails
+                    navigate("/login");
                     throw new Error("Session expired. Please log in again.");
                 }
             }
 
             const data = await response.json();
             setExpenses(data.data);
+            setFilteredExpenses(data.data); // initialize filtered list
+
         } catch (error) {
             console.error("Error fetching expenses:", error);
         } finally {
@@ -72,7 +77,7 @@ function Home() {
 
             const data = await response.json();
             localStorage.setItem("accessToken", data.access);
-            localStorage.setItem("refreshToken", data.refresh); // Refresh Token Rotation
+            localStorage.setItem("refreshToken", data.refresh);
 
             return true;
         } catch (error) {
@@ -80,6 +85,7 @@ function Home() {
             return false;
         }
     };
+
     const deleteExpense = async (id) => {
         setDeleteLoading(true);
         const accessToken = getAccessToken();
@@ -93,13 +99,13 @@ function Home() {
             });
 
             if (response.ok) {
-                // Update state to remove the deleted expense
-                setExpenses((prevExpenses) => prevExpenses.filter((expense) => expense.id !== id));
-                setRefreshTrigger((prev) => prev + 1); // Increment to trigger refresh if needed
+                const updated = expenses.filter((expense) => expense.id !== id);
+                setExpenses(updated);
+                setFilteredExpenses(updated.filter(e => category === "all" || e.category === category));
             } else if (response.status === 401) {
                 const refreshed = await refreshAccessToken();
                 if (refreshed) {
-                    deleteExpense(id); // Retry with new token
+                    deleteExpense(id);
                 } else {
                     navigate("/login");
                 }
@@ -111,14 +117,12 @@ function Home() {
         }
     };
 
-    const updateExpencesList = (e) => {
-        setCategory(e.target.value)
-        console.log("category", e.target.value)
-        const category = e.target.value;
-        setExpenses(
-            category
-                ? expenses.filter((expense) => expense.category === category || category === "")
-                : expenses
+    const updateExpensesList = (cat) => {
+        setCategory(cat);
+        setFilteredExpenses(
+            cat === "all"
+                ? expenses
+                : expenses.filter((expense) => expense.category === cat)
         );
     };
 
@@ -127,19 +131,22 @@ function Home() {
             navigate("/login");
         }
         fetchExpenses();
-    }, [refreshTrigger,category]); // Fetch expenses when component mounts or refreshToken changes
+    }, []);
+
+    useEffect(() => {
+        updateExpensesList(category);
+    }, [category, expenses]);
 
     return (
         <div className="mb-16 space-y-4 bg-white p-5">
-            {/* Add option for category filter */}
-
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-800">Your Expenses</h1>
                 <select
                     className="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
                     value={category}
-                    onChange={(e) => updateExpencesList(e)}>
-                    <option value="">All Categories</option>
+                    onChange={(e) => updateExpensesList(e.target.value)}
+                >
+                    <option value="all">All Categories</option>
                     <option value="Food">Food</option>
                     <option value="Transport">Transport</option>
                     <option value="Entertainment">Entertainment</option>
@@ -150,23 +157,22 @@ function Home() {
                     <option value="Other">Other</option>
                 </select>
             </div>
-            {/* Loading state for deleting expense */}
 
             {deleteLoading && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm transition-opacity duration-300">
-                    <div className="animate-fadeIn scale-100 transform rounded-xl bg-white px-6 py-4 shadow-xl transition-all duration-300">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
+                    <div className="rounded-xl bg-white px-6 py-4 shadow-xl">
                         <p className="text-lg font-semibold text-black">Deleting expense...</p>
                     </div>
                 </div>
             )}
 
             {loading ? (
-                // Skeleton Loader for Expenses
                 <div className="space-y-4">
                     {Array.from({ length: 5 }).map((_, index) => (
                         <div
                             key={index}
-                            className="flex animate-pulse items-center space-x-4 rounded-lg bg-gray-100 p-4">
+                            className="flex animate-pulse items-center space-x-4 rounded-lg bg-gray-100 p-4"
+                        >
                             <div className="h-12 w-12 rounded-full bg-gray-300"></div>
                             <div className="flex w-full flex-col space-y-2">
                                 <div className="h-4 w-3/4 rounded bg-gray-300"></div>
@@ -175,8 +181,8 @@ function Home() {
                         </div>
                     ))}
                 </div>
-            ) : expenses.length > 0 ? (
-                expenses.map((expense, index) => (
+            ) : filteredExpenses.length > 0 ? (
+                filteredExpenses.map((expense, index) => (
                     <ExpenseCard key={index} expense={expense} onDelete={deleteExpense} />
                 ))
             ) : (
@@ -187,7 +193,8 @@ function Home() {
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        strokeWidth={2}>
+                        strokeWidth={2}
+                    >
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
