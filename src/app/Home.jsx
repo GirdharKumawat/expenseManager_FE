@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import ExpenseCard from "../components/ExpenseCard";
 import { useEffect, useState } from "react";
 import API_ENDPOINT from "../key";
+import { useDispatch, useSelector } from "react-redux";
 
 const API = `${API_ENDPOINT}api/get/expenses`;
 const API_DELETE = `${API_ENDPOINT}api/delete/expense/`;
@@ -25,7 +26,7 @@ function Home() {
         return accessToken && refreshToken;
     };
 
-    const isAuthenticated = IsAuthenticated();
+    const { isAuthenticated } = useSelector((state) => state.auth); 
 
     const fetchExpenses = async () => {
         let accessToken = getAccessToken();
@@ -128,7 +129,7 @@ function Home() {
 
     useEffect(() => {
         if (!isAuthenticated) {
-            navigate("/login");
+            // navigate("/login");
         }
         fetchExpenses();
     }, []);
@@ -141,6 +142,7 @@ function Home() {
         <div className="mb-16 space-y-4 bg-white p-5">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-800">Your Expenses</h1>
+              
                 <select
                     className="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
                     value={category}

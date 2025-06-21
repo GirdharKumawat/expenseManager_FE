@@ -5,38 +5,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import API_ENDPOINT from "../key";
+import { useAuth } from "../features/auth/authAPI";
+import { useSelector } from "react-redux";
+import { useEffect } from "react";
+
 export function SignupForm({ className, ...props }) {
     const navigate = useNavigate();
+    const { signupUser } = useAuth();
+
+    const { loading, isAuthenticated } = useSelector((state) => state.auth);
+
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
-
-    const API = `${API_ENDPOINT}api/auth/user/ragister/`;
 
     const handleSubmit = async (e) => {
-        setLoading(true);
         e.preventDefault();
-
-        let response = await fetch(API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: username,
-                email: email,
-                password: password
-            })
-        });
-
-        if (response.status === 201) {
-            let data = await response.json();
-            localStorage.setItem("refreshToken", data.refresh);
-            localStorage.setItem("accessToken", data.access);
-            navigate("/");
-        }
+        signupUser({ username, email, password });
+        setUsername("");
+        setEmail("");
+        setPassword("");
     };
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate("/"); // Redirect to home after successful login
+        }
+    }, [isAuthenticated, navigate]);
+
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             {loading && (
@@ -80,6 +76,7 @@ export function SignupForm({ className, ...props }) {
                                         id="username"
                                         type="text"
                                         placeholder="Username"
+                                        value={username}
                                         onChange={(e) => setUsername(e.target.value)}
                                         required
                                         className="focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -91,7 +88,8 @@ export function SignupForm({ className, ...props }) {
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="m@example.com"
+                                        placeholder="email@example.com"
+                                        value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
                                         className="focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -104,6 +102,7 @@ export function SignupForm({ className, ...props }) {
                                         id="password"
                                         type="password"
                                         placeholder="**********"
+                                        value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                         className="focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"

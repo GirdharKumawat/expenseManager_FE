@@ -1,9 +1,8 @@
 /** Imported modules */
-import { Home, User, Plus } from "lucide-react";
+import { Home, User, Plus, BarChart2, FileUp } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
 function BottomNavBar() {
-    /** Location */
     const location = useLocation();
 
     return (
@@ -16,18 +15,12 @@ function BottomNavBar() {
                     <Home size={24} />
                     <span className="text-xs font-medium">Home</span>
                 </NavLink>
-                    
-                    {/* Analysis */}
+
+                {/* Analysis */}
                 <NavLink
                     to="/analysis"
-                    className={`flex flex-col items-center space-y-0.5 ${location.pathname === "analysis" ? "text-emerald-600" : "text-gray-500"}`}>
-                    <Home size={24} />
-                    <span className="text-xs font-medium">Analysis</span>
-                </NavLink>
-                <NavLink
-                    to="/analysis"
-                    className={`flex flex-col items-center space-y-0.5 ${location.pathname === "analysis" ? "text-emerald-600" : "text-gray-500"}`}>
-                    <Home size={24} />
+                    className={`flex flex-col items-center space-y-0.5 ${location.pathname === "/analysis" ? "text-emerald-600" : "text-gray-500"}`}>
+                    <BarChart2 size={24} />
                     <span className="text-xs font-medium">Analysis</span>
                 </NavLink>
 
@@ -43,6 +36,14 @@ function BottomNavBar() {
                         Add
                     </span>
                 </div>
+
+                {/* Upload */}
+                <NavLink
+                    to="/budget"
+                    className={`flex flex-col items-center space-y-0.5 ${location.pathname === "/budget" ? "text-emerald-600" : "text-gray-500"}`}>
+                    <FileUp size={24} />
+                    <span className="text-xs font-medium">Budget</span>
+                </NavLink>
 
                 {/* Account */}
                 <NavLink

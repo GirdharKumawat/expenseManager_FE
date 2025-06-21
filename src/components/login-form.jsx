@@ -4,46 +4,34 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-
-import API_ENDPOINT from "../key";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useAuth } from "../features/auth/authAPI";
 
 export function LoginForm({ className, ...props }) {
+    const navigate = useNavigate();
+    const { loginUser } = useAuth();
+
+    const { loading, isAuthenticated } = useSelector((state) => state.auth);
+
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
 
-    const API = `${API_ENDPOINT}api/auth/token/`;
-
-    const handleSubmit = async (e) => {
-        setLoading(true);
+    const handleSubmit = (e) => {
         e.preventDefault();
-
-        let response = await fetch(API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-        });
-
-        if (response.status === 200) {
-            let data = await response.json();
-            localStorage.setItem("refreshToken", data.refresh);
-            localStorage.setItem("accessToken", data.access);
-            navigate("/");
-        } else {
-            setError("Invalid credentials");
-        }
+        loginUser({ username, password });
     };
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate("/"); // Redirect to home after successful login
+        }
+    }, [isAuthenticated, navigate]);
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
-              {loading && (
+            {loading && (
                 <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="animate-fadeIn flex flex-col items-center space-y-4 rounded-xl bg-white p-6 shadow-md">
                         <svg
@@ -69,7 +57,6 @@ export function LoginForm({ className, ...props }) {
                 </div>
             )}
 
-      
             <Card>
                 <CardHeader className="text-center">
                     <CardTitle className="text-xl">Welcome back</CardTitle>
@@ -109,7 +96,10 @@ export function LoginForm({ className, ...props }) {
                                     />
                                 </div>
 
-                                <Button onClick={handleSubmit} type="submit" className="hover:bg-emerald-600 w-full bg-emerald-500">
+                                <Button
+                                    onClick={handleSubmit}
+                                    type="submit"
+                                    className="w-full bg-emerald-500 hover:bg-emerald-600">
                                     Login
                                 </Button>
                             </div>
