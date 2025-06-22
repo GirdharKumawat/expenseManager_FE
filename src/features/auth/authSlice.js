@@ -12,7 +12,7 @@ function isJWTValid(token) {
 
 const initialState = {
     loading: false,
-    isAuthenticated: isJWTValid(localStorage.getItem("accessToken")),
+    isAuthenticated: !!localStorage.getItem("accessToken"),
     accessToken: localStorage.getItem("accessToken") || "",
     refreshToken: localStorage.getItem("refreshToken") || "",
     username: "",

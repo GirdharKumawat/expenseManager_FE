@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useAuth } from "../features/auth/authAPI";
+import { useAuth } from "../features/auth/useAuth";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 

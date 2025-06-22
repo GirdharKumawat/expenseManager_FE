@@ -123,6 +123,7 @@ export function useAuth() {
 
             if (!response.ok) throw new Error("Failed to refresh token");
 
+            if (response.status === 401) throw new Error("Unauthorized - refresh token expired");
             const data = await response.json();
 
             // Update tokens in localStorage and state
@@ -180,6 +181,8 @@ export function useAuth() {
                 }
             });
 
+            if (!response.ok) throw new Error("Failed to fetch user data");
+
             if (response.status === 200) {
                 const data = await response.json();
 
@@ -188,7 +191,7 @@ export function useAuth() {
                 dispatch(setIsAuthenticated(true));
             } else if (response.status === 401) {
                 const refreshed = await refreshUser();
-                
+
                 if (refreshed) fetchUser();
                 else logoutUser();
             }

@@ -1,13 +1,13 @@
-import { ArrowLeft, CalendarIcon, FileText, CreditCard, Banknote, ChevronDown } from "lucide-react";
+import { ArrowLeft, CalendarIcon, FileText, ChevronDown } from "lucide-react";
 import { useState } from "react";
-
 import { paymentModes, categories } from "../components/categories";
 import { useNavigate } from "react-router";
-import API_ENDPOINT from "../key";
-
-const API = `${API_ENDPOINT}/api/add/expense/`;
+import useExpense from "../features/expenses/useExpense";
 
 const AddExpense = () => {
+    const nevigate = useNavigate();
+    const { postExpense } = useExpense();
+
     const [newExpense, setNewExpense] = useState({
         amount: "",
         category: "",
@@ -15,7 +15,7 @@ const AddExpense = () => {
         date: new Date().toISOString().slice(0, 10),
         paymentType: ""
     });
-    const nevigate = useNavigate();
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewExpense({
@@ -23,40 +23,20 @@ const AddExpense = () => {
             [name]: value
         });
     };
-    const accessToken = localStorage.getItem("accessToken");
 
-    const AddExpense = (addMore) => {
-        console.log(newExpense);
-        fetch(API, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(newExpense)
-        })
-            .then((res) => res.json())
-            .then((data) => {
-                console.log(data);
-            });
-
-        if (addMore) {
-            setNewExpense({
-                amount: "",
-                category: "",
-                description: "",
-                date: new Date().toISOString().slice(0, 10),
-                paymentType: ""
-            });
-        } else {
-            nevigate("/");
-        }
-    };
     const handleAddExpense = () => {
-        AddExpense(false);
-    }
+        postExpense(newExpense);
+        nevigate("/");
+    };
     const handleAddMoreExpense = () => {
-        AddExpense(true);
+        postExpense(newExpense);
+        setNewExpense({
+            amount: "",
+            category: "",
+            description: "",
+            date: new Date().toISOString().slice(0, 10),
+            paymentType: ""
+        });
     };
     return (
         <div className="space-y-6">

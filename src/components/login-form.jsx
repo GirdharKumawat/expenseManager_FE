@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useAuth } from "../features/auth/authAPI";
+import { useAuth } from "../features/auth/useAuth";
 
 export function LoginForm({ className, ...props }) {
     const navigate = useNavigate();

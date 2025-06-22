@@ -1,153 +1,50 @@
 import { useNavigate } from "react-router-dom";
 import ExpenseCard from "../components/ExpenseCard";
 import { useEffect, useState } from "react";
-import API_ENDPOINT from "../key";
-import { useDispatch, useSelector } from "react-redux";
-
-const API = `${API_ENDPOINT}api/get/expenses`;
-const API_DELETE = `${API_ENDPOINT}api/delete/expense/`;
-const REFRESH_API = `${API_ENDPOINT}api/token/refresh/`;
+import { useSelector } from "react-redux";
+import useExpense from "../features/expenses/useExpense";
 
 function Home() {
-    const [expenses, setExpenses] = useState([]);
     const [filteredExpenses, setFilteredExpenses] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [deleteLoading, setDeleteLoading] = useState(false);
     const [category, setCategory] = useState("all");
-
     const navigate = useNavigate();
+    const { getExpenses, deleteExpense } = useExpense();
 
-    const getAccessToken = () => localStorage.getItem("accessToken");
-    const getRefreshToken = () => localStorage.getItem("refreshToken");
+    const { isAuthenticated } = useSelector((state) => state.auth);
+    const { expenses, loading } = useSelector((state) => state.expense);
 
-    const IsAuthenticated = () => {
-        const accessToken = getAccessToken();
-        const refreshToken = getRefreshToken();
-        return accessToken && refreshToken;
-    };
-
-    const { isAuthenticated } = useSelector((state) => state.auth); 
-
-    const fetchExpenses = async () => {
-        let accessToken = getAccessToken();
-
-        try {
-            const response = await fetch(API, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
-                }
-            });
-
-            if (response.status === 401) {
-                const refreshed = await refreshAccessToken();
-                if (refreshed) {
-                    return fetchExpenses();
-                } else {
-                    navigate("/login");
-                    throw new Error("Session expired. Please log in again.");
-                }
-            }
-
-            const data = await response.json();
-            setExpenses(data.data);
-            setFilteredExpenses(data.data); // initialize filtered list
-
-        } catch (error) {
-            console.error("Error fetching expenses:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const refreshAccessToken = async () => {
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) return false;
-
-        try {
-            const response = await fetch(REFRESH_API, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ refresh: refreshToken })
-            });
-
-            if (!response.ok) throw new Error("Failed to refresh token");
-
-            const data = await response.json();
-            localStorage.setItem("accessToken", data.access);
-            localStorage.setItem("refreshToken", data.refresh);
-
-            return true;
-        } catch (error) {
-            console.error("Failed to refresh token:", error);
-            return false;
-        }
-    };
-
-    const deleteExpense = async (id) => {
-        setDeleteLoading(true);
-        const accessToken = getAccessToken();
-        try {
-            const response = await fetch(`${API_DELETE}${id}/`, {
-                method: "DELETE",
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
-                }
-            });
-
-            if (response.ok) {
-                const updated = expenses.filter((expense) => expense.id !== id);
-                setExpenses(updated);
-                setFilteredExpenses(updated.filter(e => category === "all" || e.category === category));
-            } else if (response.status === 401) {
-                const refreshed = await refreshAccessToken();
-                if (refreshed) {
-                    deleteExpense(id);
-                } else {
-                    navigate("/login");
-                }
-            }
-        } catch (error) {
-            console.error("Error deleting expense:", error);
-        } finally {
-            setDeleteLoading(false);
-        }
-    };
-
-    const updateExpensesList = (cat) => {
-        setCategory(cat);
-        setFilteredExpenses(
-            cat === "all"
-                ? expenses
-                : expenses.filter((expense) => expense.category === cat)
-        );
-    };
-
+    // Check if the user is authenticated and has expenses, otherwise redirect to login or fetch expenses
     useEffect(() => {
         if (!isAuthenticated) {
-            // navigate("/login");
+            navigate("/login");
+        } else if (expenses.length <= 0) {
+            getExpenses();
         }
-        fetchExpenses();
-    }, []);
+    }, [isAuthenticated]);
 
+    // Update filtered expenses when category or expenses change
     useEffect(() => {
-        updateExpensesList(category);
+        console.log("--------- Category or expenses changed ---------");
+        setFilteredExpenses(
+            category === "all"
+                ? expenses
+                : expenses.filter((expense) => expense.category === category)
+        );
     }, [category, expenses]);
+
+    const handleCategoryChange = (e) => {
+        setCategory(e.target.value);
+    };
 
     return (
         <div className="mb-16 space-y-4 bg-white p-5">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-800">Your Expenses</h1>
-              
+
                 <select
                     className="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
                     value={category}
-                    onChange={(e) => updateExpensesList(e.target.value)}
-                >
+                    onChange={handleCategoryChange}>
                     <option value="all">All Categories</option>
                     <option value="Food">Food</option>
                     <option value="Transport">Transport</option>
@@ -160,7 +57,7 @@ function Home() {
                 </select>
             </div>
 
-            {deleteLoading && (
+            {loading === "delete" && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
                     <div className="rounded-xl bg-white px-6 py-4 shadow-xl">
                         <p className="text-lg font-semibold text-black">Deleting expense...</p>
@@ -168,13 +65,12 @@ function Home() {
                 </div>
             )}
 
-            {loading ? (
+            {loading === "get" ? (
                 <div className="space-y-4">
                     {Array.from({ length: 5 }).map((_, index) => (
                         <div
                             key={index}
-                            className="flex animate-pulse items-center space-x-4 rounded-lg bg-gray-100 p-4"
-                        >
+                            className="flex animate-pulse items-center space-x-4 rounded-lg bg-gray-100 p-4">
                             <div className="h-12 w-12 rounded-full bg-gray-300"></div>
                             <div className="flex w-full flex-col space-y-2">
                                 <div className="h-4 w-3/4 rounded bg-gray-300"></div>
@@ -185,7 +81,11 @@ function Home() {
                 </div>
             ) : filteredExpenses.length > 0 ? (
                 filteredExpenses.map((expense, index) => (
-                    <ExpenseCard key={index} expense={expense} onDelete={deleteExpense} />
+                    <ExpenseCard
+                        key={index}
+                        expense={expense}
+                        onDelete={() => deleteExpense(expense.id)}
+                    />
                 ))
             ) : (
                 <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-green-600 bg-green-50 p-6 text-center shadow-sm">
@@ -195,8 +95,7 @@ function Home() {
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        strokeWidth={2}
-                    >
+                        strokeWidth={2}>
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
