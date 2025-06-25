@@ -18,7 +18,7 @@ const useExpense = () => {
     const getExpenses = async () => {
         try {
             dispatch(setLoading("get"));
-            const response = await fetch(`${API_ENDPOINT}api/get/expenses`, {
+            const response = await fetch(`${API_ENDPOINT}api/get/expenses/`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -29,12 +29,12 @@ const useExpense = () => {
             // Check if the response is successful
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
             if (response.status === 200) {
                 const data = await response.json();
                 dispatch(setExpenses(data.data));
             } else if (response.status === 401) {
                 const refreshed = await refreshUser();
+
                 if (refreshed) {
                     getExpenses();
                 } else {
@@ -45,8 +45,6 @@ const useExpense = () => {
                     });
                     navigate("/login");
                 }
-            } else {
-                throw new Error(`Unexpected response status: ${response.status}`);
             }
         } catch (error) {
             toast.error("An error occurred while fetching expenses", {
@@ -62,7 +60,7 @@ const useExpense = () => {
     const postExpense = async (expenseData) => {
         try {
             dispatch(setLoading("add"));
-            const response = await fetch(`${API_ENDPOINT}api/add/expense`, {
+            const response = await fetch(`${API_ENDPOINT}api/add/expense/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -30,7 +30,7 @@ const paymentModes = [
   { value: "Card", label: "Card", icon: CreditCard },
   { value: "Cash", label: "Cash", icon: Banknote },
   { value: "Mobile", label: "Mobile", icon: Smartphone },
-  { value: "Bank ", label: "Bank", icon: Landmark },
+  { value: "Bank", label: "Bank", icon: Landmark },
 ];
 
 

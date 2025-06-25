@@ -1,8 +1,9 @@
 import API_ENDPOINT from "../../key";
 
 import { useDispatch } from "react-redux";
-import { setLoading, setIsAuthenticated, setTokens, setUser } from "./authSlice";
+import { setLoading, setIsAuthenticated, setTokens, setUser,incrementRefreshAttempts } from "./authSlice";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 /**
  * Custom hook for authentication operations
@@ -10,6 +11,7 @@ import { toast } from "sonner";
  */
 export function useAuth() {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     /**
      * Function to login a user
@@ -19,7 +21,7 @@ export function useAuth() {
     const loginUser = async (credentials) => {
         try {
             dispatch(setLoading(true));
-            const res = await fetch(`${API_ENDPOINT}api/auth/token`, {
+            const res = await fetch(`${API_ENDPOINT}api/auth/token/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(credentials)
@@ -49,7 +51,7 @@ export function useAuth() {
             dispatch(setTokens({ access: "", refresh: "" }));
 
             // toast notification for login failure
-            toast.error("Login failed", {
+            toast.error("Login failed ", {
                 description: err.message,
                 duration: 3000
             });
@@ -112,10 +114,12 @@ export function useAuth() {
 
     const refreshUser = async () => {
         try {
+            console.log("refresh user at ")
             const refreshToken = localStorage.getItem("refreshToken");
+            console.log(refreshToken)
             if (!refreshToken) throw new Error("No refresh token found");
 
-            const response = await fetch(`${API_ENDPOINT}api/auth/token/refresh`, {
+            const response = await fetch(`${API_ENDPOINT}api/auth/token/refresh/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ refresh: refreshToken })
@@ -126,9 +130,7 @@ export function useAuth() {
             if (response.status === 401) throw new Error("Unauthorized - refresh token expired");
             const data = await response.json();
 
-            // Update tokens in localStorage and state
             localStorage.setItem("accessToken", data.access);
-            localStorage.setItem("refreshToken", data.refresh);
 
             dispatch(setIsAuthenticated(true));
             dispatch(setTokens({ access: data.access, refresh: data.refresh }));
@@ -150,9 +152,7 @@ export function useAuth() {
 
     // logout function can be added here if needed
     const logoutUser = () => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-
+        localStorage.clear();
         dispatch(setLoading(false));
         dispatch(setIsAuthenticated(false));
 
@@ -164,6 +164,7 @@ export function useAuth() {
             description: "You have successfully logged out.",
             duration: 3000
         });
+        navigate('/login')
     };
 
     const fetchUser = async () => {
@@ -185,9 +186,10 @@ export function useAuth() {
 
             if (response.status === 200) {
                 const data = await response.json();
+               
 
                 dispatch(setLoading(false));
-                dispatch(setUser(data));
+                dispatch(setUser(data.data));    
                 dispatch(setIsAuthenticated(true));
             } else if (response.status === 401) {
                 const refreshed = await refreshUser();
@@ -200,5 +202,5 @@ export function useAuth() {
         }
     };
 
-    return { loginUser, signupUser, refreshUser, logoutUser, fetchUser };
+    return { loginUser, signupUser, refreshUser, logoutUser, fetchUser};
 }

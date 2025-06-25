@@ -8,9 +8,11 @@ function Account() {
     const { logoutUser, fetchUser } = useAuth();
 
     const { username, email } = useSelector((state) => state.auth);
+    console.log("Account component rendered with username:", username, "and email:", email);
 
     useEffect(() => {
         if (!username) {
+            console.log("No user data found, fetching user data...");
             fetchUser();
         }
     }, []);

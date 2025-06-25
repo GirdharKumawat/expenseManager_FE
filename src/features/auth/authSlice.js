@@ -12,11 +12,11 @@ function isJWTValid(token) {
 
 const initialState = {
     loading: false,
-    isAuthenticated: !!localStorage.getItem("accessToken"),
+    isAuthenticated: isJWTValid(localStorage.getItem("accessToken")),
     accessToken: localStorage.getItem("accessToken") || "",
     refreshToken: localStorage.getItem("refreshToken") || "",
     username: "",
-    email: ""
+    email: "",     
 };
 
 const authSlice = createSlice({
@@ -28,6 +28,7 @@ const authSlice = createSlice({
         },
 
         setIsAuthenticated(state, action) {
+            console.log("this is set isAuthenticated ")
             state.isAuthenticated = action.payload;
         },
 
@@ -39,11 +40,15 @@ const authSlice = createSlice({
 
         setUser(state, action) {
             const { username, email } = action.payload;
-            state.username = username || "";
-            state.email = email || "";
-        }
+            state.username = username;
+            state.email = email;
+        },
+
+        incrementRefreshAttempts(state) {
+            state.refreshAttempts += 1;
+        },
     }
 });
 
-export const { setLoading, setIsAuthenticated, setTokens, setUser } = authSlice.actions;
+export const { setLoading, setIsAuthenticated, setTokens, setUser ,incrementRefreshAttempts} = authSlice.actions;
 export default authSlice.reducer;

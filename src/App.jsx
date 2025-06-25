@@ -9,7 +9,9 @@ import BottomNavBar from "@/components/BottomNavBar.jsx";
 import HeadNavBar from "@/components/HeadNavBar.jsx";
 import AddExpense from "@/app/AddExpense.jsx";
 import Account from "@/app/Account.jsx";
+import ProtectedComponents from "./components/ProtectedComponents.jsx";
 import { Toaster } from "sonner";
+ 
 /**
  * Layout with Bottom Navigation Bar
  */
@@ -42,10 +44,10 @@ function App() {
             <Routes>
                 <Route element={<LayoutWithHeadNavBar />}>
                     <Route element={<LayoutWithBottomNavBar />}>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/account" element={<Account />} />
-                        <Route path="/analysis" element={<ExpenseAnalysisPage/>} />
-                        <Route path="/budget" element={<Budget/>} />
+                        <Route path="/" element={<ProtectedComponents> <Home/></ProtectedComponents>} />
+                        <Route path="/account" element={<ProtectedComponents><Account/></ProtectedComponents>} />
+                        <Route path="/analysis" element={<ProtectedComponents><ExpenseAnalysisPage/></ProtectedComponents>} />
+                        <Route path="/budget" element={<ProtectedComponents><Budget/></ProtectedComponents>} />
                     </Route>
                 </Route>
 
