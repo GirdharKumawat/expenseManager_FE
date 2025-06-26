@@ -1,7 +1,7 @@
 import API_ENDPOINT from "../../key";
-
+import axiosAPI from "../../axios";
 import { useDispatch } from "react-redux";
-import { setLoading, setIsAuthenticated, setTokens, setUser,incrementRefreshAttempts } from "./authSlice";
+import { setLoading, setIsAuthenticated, setUser } from "./authSlice";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 
@@ -13,6 +13,21 @@ export function useAuth() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    const checkAuth = async () => {
+        try {
+            dispatch(setLoading(true));
+            const res = await axiosAPI.get("api/auth/isauthenticated/");
+            dispatch(setIsAuthenticated(true));
+            return true;
+        } catch (err) {
+            console.error("Auth check failed", err.response?.data);
+            dispatch(setIsAuthenticated(false));
+            return false;
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
     /**
      * Function to login a user
      * @param {Object} credentials - The user's login credentials
@@ -21,24 +36,26 @@ export function useAuth() {
     const loginUser = async (credentials) => {
         try {
             dispatch(setLoading(true));
-            const res = await fetch(`${API_ENDPOINT}api/auth/token/`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(credentials)
-            });
-
-            if (!res.ok) throw new Error("Invalid credentials");
-
-            const data = await res.json();
-
-            // Store tokens in localStorage
-            localStorage.setItem("accessToken", data.access);
-            localStorage.setItem("refreshToken", data.refresh);
+            const res = await axiosAPI.post("api/auth/user/login/", credentials);
+            const data = res.data;
 
             // Dispatch actions to update state
             dispatch(setLoading(false));
             dispatch(setIsAuthenticated(true));
-            dispatch(setTokens({ access: data.access, refresh: data.refresh }));
+
+            // Store user data if available
+            if (data.user) {
+                dispatch(
+                    setUser({
+                        id: data.user.id,
+                        username: data.user.username,
+                        email: data.user.email
+                    })
+                );
+            } else {
+                // If user data not in login response, fetch it
+                await fetchUser();
+            }
 
             // toast notification for successful login
             toast.success("Login successful", {
@@ -48,11 +65,9 @@ export function useAuth() {
         } catch (err) {
             dispatch(setLoading(false));
             dispatch(setIsAuthenticated(false));
-            dispatch(setTokens({ access: "", refresh: "" }));
-
             // toast notification for login failure
             toast.error("Login failed ", {
-                description: err.message,
+                description: "Invalid credentials",
                 duration: 3000
             });
         }
@@ -60,35 +75,21 @@ export function useAuth() {
 
     /**
      * Function to register a new user
-     * @param {Object} userData - The user's registration data
+     * @param {Object} credentials - The user's registration data
      * @returns {Promise<Object>} The signup response data
      */
-    const signupUser = async (userData) => {
+    const signupUser = async (credentials) => {
         try {
             dispatch(setLoading(true));
-            let response = await fetch(`${API_ENDPOINT}api/auth/user/register`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(userData)
-            });
-
-            if (!response.ok) throw new Error("Signup failed");
-
-            const data = await response.json();
-
-            // Store tokens in localStorage
-            localStorage.setItem("accessToken", data.access);
-            localStorage.setItem("refreshToken", data.refresh);
-
-            // Dispatch actions to update state
+            const res = await axiosAPI.post("api/auth/user/register/", credentials);
+            const data = res.data;
             dispatch(setLoading(false));
             dispatch(setIsAuthenticated(true));
-            dispatch(setTokens({ access: data.access, refresh: data.refresh }));
             dispatch(
                 setUser({
-                    id: data.id || 0,
-                    username: data.username || "",
-                    email: data.email || ""
+                    id: data.user.id,
+                    username: data.user.username,
+                    email: data.user.email
                 })
             );
 
@@ -100,11 +101,9 @@ export function useAuth() {
         } catch (err) {
             dispatch(setLoading(false));
             dispatch(setIsAuthenticated(false));
-            dispatch(setTokens({ access: "", refresh: "" }));
-
             // toast notification for signup failure
             toast.error("Sign up failed", {
-                description: err.message,
+                description: err.response.data?.username || err.response.data?.email,
                 duration: 3000
             });
         }
@@ -114,31 +113,14 @@ export function useAuth() {
 
     const refreshUser = async () => {
         try {
-            console.log("refresh user at ")
-            const refreshToken = localStorage.getItem("refreshToken");
-            console.log(refreshToken)
-            if (!refreshToken) throw new Error("No refresh token found");
-
-            const response = await fetch(`${API_ENDPOINT}api/auth/token/refresh/`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ refresh: refreshToken })
-            });
-
-            if (!response.ok) throw new Error("Failed to refresh token");
-
-            if (response.status === 401) throw new Error("Unauthorized - refresh token expired");
-            const data = await response.json();
-
-            localStorage.setItem("accessToken", data.access);
+            const response = await axiosAPI.post("api/auth/token/refresh/");
 
             dispatch(setIsAuthenticated(true));
-            dispatch(setTokens({ access: data.access, refresh: data.refresh }));
 
             return true;
         } catch (err) {
             dispatch(setIsAuthenticated(false));
-            dispatch(setTokens({ access: "", refresh: "" }));
+            // Remove the setTokens call since it's not defined in authSlice
 
             // toast notification for refresh failure
             toast.error("Failed to refresh user", {
@@ -151,56 +133,71 @@ export function useAuth() {
     };
 
     // logout function can be added here if needed
-    const logoutUser = () => {
-        localStorage.clear();
-        dispatch(setLoading(false));
-        dispatch(setIsAuthenticated(false));
-
-        dispatch(setTokens({ access: "", refresh: "" }));
-        dispatch(setUser({ username: "", email: "" }));
-
-        // toast notification for successful logout
-        toast.success("Logout successful", {
-            description: "You have successfully logged out.",
-            duration: 3000
-        });
-        navigate('/login')
-    };
-
-    const fetchUser = async () => {
-        const accessToken = localStorage.getItem("accessToken");
-        if (!accessToken) return;
-
+    const logoutUser = async () => {
         try {
-            dispatch(setLoading(true));
+            await axiosAPI.post("api/auth/user/logout/");
 
-            const response = await fetch(`${API_ENDPOINT}api/profile`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`
-                }
+            dispatch(setLoading(false));
+            dispatch(setIsAuthenticated(false));
+            dispatch(setUser({ id: null, username: "", email: "" }));
+
+            // toast notification for successful logout
+            toast.success("Logout successful", {
+                description: "You have successfully logged out.",
+                duration: 3000
             });
-
-            if (!response.ok) throw new Error("Failed to fetch user data");
-
-            if (response.status === 200) {
-                const data = await response.json();
-               
-
-                dispatch(setLoading(false));
-                dispatch(setUser(data.data));    
-                dispatch(setIsAuthenticated(true));
-            } else if (response.status === 401) {
-                const refreshed = await refreshUser();
-
-                if (refreshed) fetchUser();
-                else logoutUser();
-            }
+            navigate("/login");
         } catch (error) {
-            console.error("Error fetching user:", error);
+            console.error("Error logging out:", error);
+            dispatch(setLoading(false));
+            dispatch(setIsAuthenticated(false));
+            dispatch(setUser({ id: null, username: "", email: "" }));
+
+            // toast notification for logout failure
+            toast.error("Logout failed", {
+                description: "An error occurred while logging out.",
+                duration: 3000
+            });
         }
     };
 
-    return { loginUser, signupUser, refreshUser, logoutUser, fetchUser};
+    const fetchUser = async () => {
+        try {
+            dispatch(setLoading(true));
+
+            const res = await axiosAPI.get("api/profile");
+            dispatch(setLoading(false));
+            dispatch(setUser(res.data.data));
+            dispatch(setIsAuthenticated(true));
+        } catch (error) {
+            // If token expired (401 error), try to refresh
+            if (error.response?.status === 401) {
+                const refreshed = await refreshUser();
+                if (refreshed) {
+                    // Retry fetching user data after successful refresh
+                    try {
+                        const res = await axiosAPI.get("api/profile");
+                        dispatch(setLoading(false));
+                        dispatch(setUser(res.data.data));
+                        dispatch(setIsAuthenticated(true));
+                    } catch (retryError) {
+                        console.error("Error fetching user after refresh:", retryError);
+                        dispatch(setLoading(false));
+                        logoutUser(); // Logout if retry also failed
+                    }
+                } else {
+                    dispatch(setLoading(false));
+                    logoutUser(); // Logout if refresh failed
+                }
+            } else {
+                dispatch(setLoading(false));
+                toast.error("Failed to fetch user data", {
+                    description: error.response?.data?.message || error.message,
+                    duration: 3000
+                });
+            }
+        }
+    };
+
+    return { checkAuth, loginUser, signupUser, refreshUser, logoutUser, fetchUser };
 }

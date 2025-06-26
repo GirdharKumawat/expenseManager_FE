@@ -1,28 +1,40 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/useAuth";
 
 function ProtectedComponents({ children }) {
     const { isAuthenticated } = useSelector((state) => state.auth);
-    const { logoutUser, refreshUser } = useAuth();
+    const { checkAuth } = useAuth();
     const navigate = useNavigate();
+    const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            const fun = async () => {
-                let x = await refreshUser();
-                console.log(x);
-            };
-            fun();
-            console.log(isAuthenticated);
+        const validateAuth = async () => {
             if (!isAuthenticated) {
-                console.log("calling logout user");
-                // logoutUser();
-                navigate("/login");
+                try {
+                    const isValid = await checkAuth();
+                    if (!isValid) {
+                        navigate("/login");
+                    }
+                } catch (error) {
+                    console.error("Auth validation failed:", error);
+                    navigate("/login");
+                }
             }
-        }
-    }, [isAuthenticated]);
+            setIsChecking(false);
+        };
+
+        validateAuth();
+    }, [isAuthenticated, checkAuth, navigate]);
+
+    if (isChecking) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
+            </div>
+        );
+    }
 
     return isAuthenticated ? children : null;
 }

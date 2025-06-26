@@ -1,20 +1,24 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axiosAPI from "../../axios";
 
-function isJWTValid(token) {
-    if (!token) return false;
-    try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        return !(payload.exp && Date.now() >= payload.exp * 1000);
-    } catch (e) {
-        return false;
+// Create an async thunk for checking authentication
+export const checkAuthentication = createAsyncThunk(
+    'auth/checkAuthentication',
+    async (_, { rejectWithValue }) => {
+        try {
+            const res = await axiosAPI.get("api/auth/isauthenticated/");
+            return true;
+        } catch (err) {
+            console.error("Auth check failed", err.response?.data);
+            return rejectWithValue(false);
+        }
     }
-}
+);
 
 const initialState = {
     loading: false,
-    isAuthenticated: isJWTValid(localStorage.getItem("accessToken")),
-    accessToken: localStorage.getItem("accessToken") || "",
-    refreshToken: localStorage.getItem("refreshToken") || "",
+    isAuthenticated: false, // Initialize with a serializable value
+    id: null,
     username: "",
     email: "",     
 };
@@ -28,27 +32,32 @@ const authSlice = createSlice({
         },
 
         setIsAuthenticated(state, action) {
-            console.log("this is set isAuthenticated ")
             state.isAuthenticated = action.payload;
         },
 
-        setTokens(state, action) {
-            const { access, refresh } = action.payload;
-            state.accessToken = access || "";
-            state.refreshToken = refresh || "";
-        },
-
         setUser(state, action) {
-            const { username, email } = action.payload;
-            state.username = username;
-            state.email = email;
+            const { id, username, email } = action.payload;
+            if (id !== undefined) state.id = id;
+            if (username !== undefined) state.username = username;
+            if (email !== undefined) state.email = email;
         },
 
-        incrementRefreshAttempts(state) {
-            state.refreshAttempts += 1;
-        },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(checkAuthentication.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(checkAuthentication.fulfilled, (state, action) => {
+                state.loading = false;
+                state.isAuthenticated = action.payload;
+            })
+            .addCase(checkAuthentication.rejected, (state) => {
+                state.loading = false;
+                state.isAuthenticated = false;
+            });
     }
 });
 
-export const { setLoading, setIsAuthenticated, setTokens, setUser ,incrementRefreshAttempts} = authSlice.actions;
+export const { setLoading, setIsAuthenticated,  setUser} = authSlice.actions;
 export default authSlice.reducer;

@@ -2,15 +2,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-import API_ENDPOINT from "../../key";
 import { useAuth } from "../auth/useAuth";
 import { setExpenses, setLoading, removeExpense, addExpense } from "./expenseSlice";
+import axiosAPI from "../../axios";
 
 const useExpense = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-
-    const { accessToken } = useSelector((state) => state.auth);
 
     const { refreshUser, logoutUser } = useAuth();
 
@@ -18,35 +16,14 @@ const useExpense = () => {
     const getExpenses = async () => {
         try {
             dispatch(setLoading("get"));
-            const response = await fetch(`${API_ENDPOINT}api/get/expenses/`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`
-                }
-            });
+            const response = await axiosAPI.get("api/get/expenses/");
 
-            // Check if the response is successful
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             if (response.status === 200) {
-                const data = await response.json();
+                const data = response.data;
                 dispatch(setExpenses(data.data));
-            } else if (response.status === 401) {
-                const refreshed = await refreshUser();
-
-                if (refreshed) {
-                    getExpenses();
-                } else {
-                    logoutUser();
-                    toast.error("Session expired. Please log in again.", {
-                        duration: 3000,
-                        position: "top-center"
-                    });
-                    navigate("/login");
-                }
             }
         } catch (error) {
+            // 401 errors are now handled automatically by axios interceptor
             toast.error("An error occurred while fetching expenses", {
                 duration: 3000,
                 position: "top-center"
@@ -60,40 +37,18 @@ const useExpense = () => {
     const postExpense = async (expenseData) => {
         try {
             dispatch(setLoading("add"));
-            const response = await fetch(`${API_ENDPOINT}api/add/expense/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`
-                },
-                body: JSON.stringify(expenseData)
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const response = await axiosAPI.post("api/add/expense/", expenseData);
 
             if (response.status === 201) {
-                const data = await response.json();
+                const data = response.data;
                 toast.success("Expense added successfully", {
                     duration: 3000,
                     position: "top-center"
                 });
                 dispatch(addExpense(data.data));
-            } else if (response.status === 401) {
-                const refreshed = await refreshUser();
-                if (refreshed) {
-                    postExpense(expenseData);
-                } else {
-                    logoutUser();
-                    toast.error("Session expired. Please log in again.", {
-                        duration: 3000,
-                        position: "top-center"
-                    });
-                    navigate("/login");
-                }
-            } else {
-                throw new Error(`Unexpected response status: ${response.status}`);
             }
         } catch (error) {
+            // 401 errors are now handled automatically by axios interceptor
             toast.error("An error occurred while adding the expense", {
                 duration: 3000,
                 position: "top-center"
@@ -107,15 +62,7 @@ const useExpense = () => {
     const deleteExpense = async (expenseId) => {
         try {
             dispatch(setLoading("delete"));
-            const response = await fetch(`${API_ENDPOINT}api/delete/expense/${expenseId}`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`
-                }
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const response = await axiosAPI.delete(`api/delete/expense/${expenseId}/`);
 
             if (response.status === 204) {
                 toast.success("Expense deleted successfully", {
@@ -123,22 +70,9 @@ const useExpense = () => {
                     position: "top-center"
                 });
                 dispatch(removeExpense(expenseId));
-            } else if (response.status === 401) {
-                const refreshed = await refreshUser();
-                if (refreshed) {
-                    deleteExpense(expenseId);
-                } else {
-                    logoutUser();
-                    toast.error("Session expired. Please log in again.", {
-                        duration: 3000,
-                        position: "top-center"
-                    });
-                    navigate("/login");
-                }
-            } else {
-                throw new Error(`Unexpected response status: ${response.status}`);
             }
         } catch (error) {
+            // 401 errors are now handled automatically by axios interceptor
             toast.error("An error occurred while deleting the expense", {
                 duration: 3000,
                 position: "top-center"
@@ -148,7 +82,18 @@ const useExpense = () => {
         }
     };
 
-    return { getExpenses, deleteExpense, postExpense };
+    // function to test cookie authentication
+    const testCookieAuth = async () => {
+        try {
+            const response = await axiosAPI.get("api/auth/isauthenticated/");
+            return true;
+        } catch (error) {
+            console.error("Cookie auth test failed:", error.response?.status, error.response?.data);
+            return false;
+        }
+    };
+
+    return { getExpenses, deleteExpense, postExpense, testCookieAuth };
 };
 
 export default useExpense;

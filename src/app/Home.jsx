@@ -32,15 +32,12 @@ function Home() {
         }));
     };
 
-    const { isAuthenticated } = useSelector((state) => state.auth);
     const { expenses, loading } = useSelector((state) => state.expense);
-
-    // Check if the user is authenticated and has expenses, otherwise redirect to login or fetch expenses
     useEffect(() => {
-       if (expenses.length <= 0) {
+        if (expenses.length <= 0) {
             getExpenses();
         }
-    }, [expenses]);
+    }, [ ]);
 
     // Update filtered expenses when both category and paymentType change
     useEffect(() => {
@@ -119,7 +116,7 @@ function Home() {
 
     const groupByCategory = () => {
         const categories = {};
-         filteredExpenses .forEach(({ category, amount }) => {
+        filteredExpenses.forEach(({ category, amount }) => {
             categories[category] = (categories[category] || 0) + parseFloat(amount);
         });
         return categories;
