@@ -18,7 +18,6 @@ function ProtectedComponents({ children }) {
                         navigate("/login");
                     }
                 } catch (error) {
-                    console.error("Auth validation failed:", error);
                     navigate("/login");
                 }
             }

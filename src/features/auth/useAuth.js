@@ -20,7 +20,6 @@ export function useAuth() {
             dispatch(setIsAuthenticated(true));
             return true;
         } catch (err) {
-            console.error("Auth check failed", err.response?.data);
             dispatch(setIsAuthenticated(false));
             return false;
         } finally {
@@ -65,6 +64,7 @@ export function useAuth() {
         } catch (err) {
             dispatch(setLoading(false));
             dispatch(setIsAuthenticated(false));
+            console.log(err);
             // toast notification for login failure
             toast.error("Login failed ", {
                 description: "Invalid credentials",
@@ -148,7 +148,6 @@ export function useAuth() {
             });
             navigate("/login");
         } catch (error) {
-            console.error("Error logging out:", error);
             dispatch(setLoading(false));
             dispatch(setIsAuthenticated(false));
             dispatch(setUser({ id: null, username: "", email: "" }));
@@ -181,7 +180,6 @@ export function useAuth() {
                         dispatch(setUser(res.data.data));
                         dispatch(setIsAuthenticated(true));
                     } catch (retryError) {
-                        console.error("Error fetching user after refresh:", retryError);
                         dispatch(setLoading(false));
                         logoutUser(); // Logout if retry also failed
                     }

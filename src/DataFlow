@@ -1,0 +1,422 @@
+# Expense Manager Application - Data Flow Analysis
+
+## 📋 Overview
+This document outlines the complete data flow for different scenarios in the Expense Manager React application, including authentication, expense management, and component interactions.
+
+## 🏗️ Application Architecture
+
+### Core Structure
+```
+src/
+├── App.jsx                    # Main app component with routing
+├── main.jsx                   # Entry point with Redux Provider
+├── axios.js                   # HTTP client with interceptors
+├── key.js                     # API endpoint configuration
+├── Store/
+│   └── store.js              # Redux store configuration
+├── features/
+│   ├── auth/                 # Authentication feature
+│   │   ├── authSlice.js      # Auth Redux slice
+│   │   └── useAuth.js        # Auth custom hook
+│   └── expenses/             # Expense management feature
+│       ├── expenseSlice.js   # Expense Redux slice
+│       └── useExpense.js     # Expense custom hook
+├── app/                      # Page components
+├── components/               # Reusable components
+└── lib/                      # Utility functions
+```
+
+### Redux Store Structure
+```javascript
+{
+  auth: {
+    loading: boolean,
+    isAuthenticated: boolean,
+    id: number|null,
+    username: string,
+    email: string
+  },
+  expense: {
+    loading: string,
+    expenses: array
+  }
+}
+```
+
+## 🔐 Authentication Flow
+
+### 1. Application Startup Flow
+```
+main.jsx
+├── Creates Redux store
+├── Wraps App with Redux Provider
+└── Renders App component
+
+App.jsx
+├── Sets up routing with React Router
+├── Defines protected and public routes
+├── Wraps protected routes with ProtectedComponents
+└── Provides layout components (HeadNavBar, BottomNavBar)
+```
+
+### 2. Protected Route Access Flow
+```
+User navigates to "/" (Home)
+│
+├── ProtectedComponents.jsx checks authentication
+│   ├── useSelector((state) => state.auth.isAuthenticated)
+│   ├── If NOT authenticated:
+│   │   ├── Calls useAuth().checkAuth()
+│   │   ├── checkAuth() → axiosAPI.get("api/auth/isauthenticated/")
+│   │   ├── If check fails → navigate("/login")
+│   │   └── Shows loading spinner while checking
+│   └── If authenticated → renders children (Home component)
+│
+└── Home.jsx renders with expense data
+```
+
+### 3. Login Flow
+```
+Login.jsx
+├── Renders LoginForm component
+
+LoginForm.jsx
+├── useState for username, password
+├── useSelector for loading, isAuthenticated from Redux
+├── useAuth() hook for loginUser function
+├── useNavigate for redirection
+│
+├── User submits form:
+│   ├── handleSubmit() calls loginUser({username, password})
+│   ├── loginUser() in useAuth.js:
+│   │   ├── dispatch(setLoading(true))
+│   │   ├── axiosAPI.post("api/auth/user/login/", credentials)
+│   │   ├── On success:
+│   │   │   ├── dispatch(setLoading(false))
+│   │   │   ├── dispatch(setIsAuthenticated(true))
+│   │   │   ├── dispatch(setUser({id, username, email}))
+│   │   │   └── toast.success("Login successful")
+│   │   └── On error:
+│   │       ├── dispatch(setLoading(false))
+│   │       ├── dispatch(setIsAuthenticated(false))
+│   │       └── toast.error("Login failed")
+│   │
+│   └── useEffect watches isAuthenticated:
+│       └── If true → navigate("/") to Home
+│
+└── Loading state shows spinner overlay
+```
+
+### 4. Signup Flow
+```
+Signup.jsx
+├── Renders SignupForm component
+
+SignupForm.jsx
+├── useState for username, email, password
+├── useSelector for loading, isAuthenticated
+├── useAuth() hook for signupUser function
+│
+├── User submits form:
+│   ├── handleSubmit() calls signupUser({username, email, password})
+│   ├── signupUser() in useAuth.js:
+│   │   ├── dispatch(setLoading(true))
+│   │   ├── axiosAPI.post("api/auth/user/register/", credentials)
+│   │   ├── On success:
+│   │   │   ├── dispatch(setLoading(false))
+│   │   │   ├── dispatch(setIsAuthenticated(true))
+│   │   │   ├── dispatch(setUser({id, username, email}))
+│   │   │   └── toast.success("Sign up successful")
+│   │   └── On error:
+│   │       ├── dispatch(setLoading(false))
+│   │       ├── dispatch(setIsAuthenticated(false))
+│   │       └── toast.error("Sign up failed")
+│   │
+│   └── useEffect watches isAuthenticated:
+│       └── If true → navigate("/") to Home
+│
+└── Form resets after submission
+```
+
+### 5. Logout Flow
+```
+Account.jsx
+├── User clicks logout button
+├── handleLogout() calls useAuth().logoutUser()
+├── logoutUser() in useAuth.js:
+│   ├── axiosAPI.post("api/auth/user/logout/")
+│   ├── dispatch(setLoading(false))
+│   ├── dispatch(setIsAuthenticated(false))
+│   ├── dispatch(setUser({id: null, username: "", email: ""}))
+│   ├── toast.success("Logout successful")
+│   └── navigate("/login")
+│
+└── User redirected to login page
+```
+
+## 💰 Expense Management Flow
+
+### 1. Home Page Initialization
+```
+Home.jsx renders
+├── useSelector to get expenses, loading from Redux
+├── useState for local state (filteredExpenses, category, paymentType, etc.)
+├── useExpense() hook for expense operations
+│
+├── useEffect on expenses:
+│   ├── If expenses.length <= 0:
+│   │   └── Call getExpenses()
+│   └── getExpenses() in useExpense.js:
+│       ├── dispatch(setLoading("get"))
+│       ├── axiosAPI.get("api/get/expenses/")
+│       ├── On success:
+│       │   └── dispatch(setExpenses(data.data))
+│       ├── On error:
+│       │   └── toast.error("Error fetching expenses")
+│       └── dispatch(setLoading(""))
+│
+├── useEffect for filtering:
+│   ├── Watches category, paymentType, expenses changes
+│   ├── Filters expenses based on selected criteria
+│   └── Updates filteredExpenses state
+│
+└── Renders expense cards, statistics, and add expense drawer
+```
+
+### 2. Add Expense Flow
+```
+Home.jsx - Add Expense Button clicked
+├── openDrawer() sets isDrawerOpen to true
+├── Drawer opens with form fields:
+│   ├── Amount (number input)
+│   ├── Category (select dropdown)
+│   ├── Description (text input)
+│   ├── Date (date input)
+│   └── Payment Method (radio buttons)
+│
+├── Form validation on submit:
+│   ├── validateForm() checks all required fields
+│   ├── Sets formErrors state if validation fails
+│   └── Returns true/false for valid form
+│
+├── User clicks "Add Expense":
+│   ├── handleAddExpense() calls validateForm()
+│   ├── If valid:
+│   │   ├── Calls postExpense(newExpense)
+│   │   ├── postExpense() in useExpense.js:
+│   │   │   ├── dispatch(setLoading("add"))
+│   │   │   ├── axiosAPI.post("api/add/expense/", expenseData)
+│   │   │   ├── On success:
+│   │   │   │   ├── toast.success("Expense added successfully")
+│   │   │   │   └── dispatch(addExpense(data.data))
+│   │   │   ├── On error:
+│   │   │   │   └── toast.error("Error adding expense")
+│   │   │   └── dispatch(setLoading(""))
+│   │   ├── closeDrawer()
+│   │   └── resetForm()
+│   └── If invalid: Shows validation errors
+│
+└── User clicks "Add & Continue":
+    ├── Same validation and submission process
+    ├── But keeps drawer open
+    └── Only resets form fields
+```
+
+### 3. Delete Expense Flow
+```
+ExpenseCard.jsx - Delete button clicked
+├── onDelete() prop called with expense.id
+├── deleteExpense(expense.id) in useExpense.js:
+│   ├── dispatch(setLoading("delete"))
+│   ├── axiosAPI.delete(`api/delete/expense/${expenseId}`)
+│   ├── On success:
+│   │   ├── toast.success("Expense deleted successfully")
+│   │   └── dispatch(removeExpense(expenseId))
+│   ├── On error:
+│   │   └── toast.error("Error deleting expense")
+│   └── dispatch(setLoading(""))
+│
+├── removeExpense in expenseSlice.js:
+│   └── Filters out expense with matching ID from state
+│
+└── UI updates automatically via Redux state change
+```
+
+### 4. Expense Filtering Flow
+```
+Home.jsx - Filter controls
+├── Category dropdown change:
+│   ├── handleCategoryChange() updates category state
+│   └── Triggers useEffect for filtering
+│
+├── Payment type dropdown change:
+│   ├── handlePaymentTypeChange() updates paymentType state
+│   └── Triggers useEffect for filtering
+│
+├── useEffect([category, paymentType, expenses]):
+│   ├── Filters expenses array based on:
+│   │   ├── category === "all" || expense.category === category
+│   │   └── paymentType === "all" || expense.paymentType === paymentType
+│   └── Updates filteredExpenses state
+│
+└── ExpenseCard components re-render with filtered data
+```
+
+## 🔄 HTTP Request Interceptor Flow
+
+### Automatic Token Refresh
+```
+Any API request fails with 401 status
+├── axios.js response interceptor catches error
+├── Checks if:
+│   ├── error.response?.status === 401
+│   ├── !originalRequest._retry
+│   └── Not an auth endpoint (login/register/refresh)
+│
+├── If refresh needed:
+│   ├── Sets isRefreshing flag to prevent multiple attempts
+│   ├── Marks originalRequest._retry = true
+│   ├── Calls axiosAPI.post("api/auth/token/refresh/")
+│   ├── On refresh success:
+│   │   └── Retries original request with axiosAPI(originalRequest)
+│   ├── On refresh failure:
+│   │   └── Redirects to window.location.href = "/login"
+│   └── Always sets isRefreshing = false
+│
+└── Returns promise with retry result or rejection
+```
+
+## 🧩 Component Lifecycle Flows
+
+### 1. Account Page Flow
+```
+Account.jsx initialization
+├── useAuth() hook provides logoutUser, fetchUser
+├── useSelector gets username, email from Redux
+├── useNavigate for redirection
+│
+├── useEffect on component mount:
+│   ├── If no username in state:
+│   │   └── Calls fetchUser()
+│   └── fetchUser() in useAuth.js:
+│       ├── dispatch(setLoading(true))
+│       ├── axiosAPI.get("api/profile")
+│       ├── On success:
+│       │   ├── dispatch(setUser(res.data.data))
+│       │   └── dispatch(setIsAuthenticated(true))
+│       ├── On 401 error:
+│       │   ├── Tries refreshUser()
+│       │   ├── If refresh succeeds: Retries profile fetch
+│       │   └── If refresh fails: Calls logoutUser()
+│       └── dispatch(setLoading(false))
+│
+├── Renders user info if username exists
+├── Shows loading message if fetching
+└── Logout button triggers logout flow
+```
+
+### 2. Navigation Flow
+```
+BottomNavBar.jsx
+├── useLocation to get current path
+├── Renders NavLink components for each route:
+│   ├── Home (/)
+│   ├── Analysis (/analysis)
+│   ├── Budget (/budget)
+│   └── Account (/account)
+│
+├── Each NavLink:
+│   ├── Highlights active route based on location.pathname
+│   ├── Uses React Router navigation
+│   └── Triggers ProtectedComponents check for protected routes
+│
+└── Fixed position at bottom of screen
+```
+
+### 3. Loading States Flow
+```
+Various Loading Indicators:
+│
+├── Global Loading (Login/Signup):
+│   ├── Redux auth.loading state
+│   ├── Shows full-screen overlay with spinner
+│   └── Blocks user interaction during auth operations
+│
+├── Expense Loading States:
+│   ├── "get": Shows skeleton cards while fetching expenses
+│   ├── "add": Shows "Adding..." on submit button
+│   ├── "delete": Shows deletion overlay
+│   └── "": No loading state (normal operation)
+│
+└── Authentication Check Loading:
+    ├── ProtectedComponents shows spinner
+    ├── While validating authentication
+    └── Before rendering protected content
+```
+
+## 🔧 Error Handling Flow
+
+### 1. API Error Handling
+```
+API Request Fails
+├── axios interceptor catches error
+├── If 401 (Unauthorized):
+│   ├── Automatic token refresh attempt
+│   ├── Retry original request if refresh succeeds
+│   └── Redirect to login if refresh fails
+│
+├── Other HTTP errors:
+│   ├── Passed to calling function
+│   ├── Usually shows toast notification
+│   └── Updates loading state to false
+│
+└── Network errors:
+    ├── Shows generic error message
+    └── Allows user to retry operation
+```
+
+### 2. Form Validation Flow
+```
+Form Submission (Add Expense)
+├── validateForm() checks all fields:
+│   ├── Amount: Must be valid number > 0
+│   ├── Category: Must be selected
+│   ├── Description: Must not be empty
+│   └── Payment Type: Must be selected
+│
+├── If validation fails:
+│   ├── Sets formErrors state with specific messages
+│   ├── Prevents form submission
+│   └── Shows error messages under form fields
+│
+├── If validation passes:
+│   ├── Clears formErrors state
+│   ├── Proceeds with API call
+│   └── Shows success/error based on API response
+│
+└── Form reset only happens after successful submission
+```
+
+## 📊 State Management Flow
+
+### Redux State Updates
+```
+Action Dispatched
+├── Reducer processes action in respective slice
+├── State update triggers component re-renders
+├── Components using useSelector automatically update
+└── UI reflects new state immediately
+
+Auth State Updates:
+├── setLoading(boolean) → Shows/hides loading indicators
+├── setIsAuthenticated(boolean) → Controls access to protected routes
+└── setUser({id, username, email}) → Updates user profile data
+
+Expense State Updates:
+├── setLoading(string) → Controls specific loading states
+├── setExpenses(array) → Replaces entire expenses array
+├── addExpense(object) → Prepends new expense to array
+└── removeExpense(id) → Filters out expense with matching ID
+```
+
+This comprehensive data flow documentation covers all major scenarios and interactions in the Expense Manager application, from authentication to expense management, including error handling and state management patterns.

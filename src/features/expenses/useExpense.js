@@ -88,7 +88,6 @@ const useExpense = () => {
             const response = await axiosAPI.get("api/auth/isauthenticated/");
             return true;
         } catch (error) {
-            console.error("Cookie auth test failed:", error.response?.status, error.response?.data);
             return false;
         }
     };
