@@ -1,5 +1,5 @@
 import axios from "axios";
-import API_ENDPOINT from "./key";
+import {API_ENDPOINT} from "./key";
 
 const axiosAPI = axios.create({
     baseURL: API_ENDPOINT,

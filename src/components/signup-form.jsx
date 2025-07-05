@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useAuth } from "../features/auth/useAuth";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
+import GoogleLoginButton from "./GoogleLoginButton";
 
 export function SignupForm({ className, ...props }) {
     const navigate = useNavigate();
@@ -116,7 +117,12 @@ export function SignupForm({ className, ...props }) {
                                     Sign up
                                 </Button>
                             </div>
-
+                            <div className="flex w-full max-w-xs items-center">
+                                <div className="h-px flex-grow bg-gray-300" />
+                                <span className="mx-4 text-sm text-gray-500">or</span>
+                                <div className="h-px flex-grow bg-gray-300" />
+                            </div>
+                            <GoogleLoginButton/>
                             <div className="text-center text-sm">
                                 Already have an account?{" "}
                                 <Link to="/login" className="underline underline-offset-4">

@@ -1,6 +1,5 @@
 import { Banknote, CreditCard, Trash2, Package, AwardIcon } from "lucide-react";
 import {categories,paymentModes} from "../components/categories";
-import API_ENDPOINT from "../key";
 
 
 

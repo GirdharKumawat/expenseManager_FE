@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useAuth } from "../features/auth/useAuth";
+import GoogleLoginButton from "./GoogleLoginButton";
 
 export function LoginForm({ className, ...props }) {
     const navigate = useNavigate();
@@ -103,7 +104,12 @@ export function LoginForm({ className, ...props }) {
                                     Login
                                 </Button>
                             </div>
-
+                            <div className="flex w-full max-w-xs items-center">
+                                <div className="h-px flex-grow bg-gray-300" />
+                                <span className="mx-4 text-sm text-gray-500">or</span>
+                                <div className="h-px flex-grow bg-gray-300" />
+                            </div>
+                            <GoogleLoginButton />
                             <div className="text-center text-sm">
                                 Don&apos;t have an account?{" "}
                                 <Link to="/signup" className="underline underline-offset-4">

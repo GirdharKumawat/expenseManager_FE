@@ -1,4 +1,3 @@
-import API_ENDPOINT from "../../key";
 import axiosAPI from "../../axios";
 import { useDispatch } from "react-redux";
 import { setLoading, setIsAuthenticated, setUser } from "./authSlice";
