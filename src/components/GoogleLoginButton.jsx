@@ -1,13 +1,16 @@
 import { useEffect } from 'react';
 import { CLIENT_ID } from '../key';
 import  axiosAPI  from '../axios';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setLoading, setIsAuthenticated, setUser } from '../features/auth/authSlice';
+import { toast } from 'sonner';
 
 function GoogleLoginButton() {
-    const nevigate = useNavigate
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
   useEffect(() => {
     if (!window.google || !window.google.accounts) {
-      console.error('Google Identity script not loaded');
       return;
     }
 
@@ -34,13 +37,26 @@ function GoogleLoginButton() {
     const idToken = response.credential;
 
     try {
+      dispatch(setLoading(true));
       const res = await axiosAPI.post('api/auth/google/', { id_token: idToken });
 
-      console.log('✅ Login successful:', res.data);
+      // Update Redux state with user data
+      dispatch(setIsAuthenticated(true));
+      
+      toast.success("Google login successful", {
+        description: "You have successfully logged in with Google.",
+        duration: 3000
+      });
 
-
+      navigate('/');
     } catch (error) {
-      console.error('❌ Login failed:', error.response?.data || error.message);
+      dispatch(setIsAuthenticated(false));
+      toast.error("Google login failed", {
+        description: error.response?.data?.message || "Authentication failed",
+        duration: 3000
+      });
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
