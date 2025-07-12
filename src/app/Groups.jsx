@@ -19,7 +19,8 @@ function Groups() {
 
 
     useEffect(() => {
-         
+         if(!groups.length >=1)
+            
         fetchGroups();
     }, [ ]);
 
