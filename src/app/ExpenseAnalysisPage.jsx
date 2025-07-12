@@ -9,7 +9,9 @@ import {
     LinearScale,
     PointElement,
     Tooltip,
-    Legend
+    Legend,
+    Filler  
+
 } from "chart.js";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -24,7 +26,8 @@ ChartJS.register(
     LinearScale,
     PointElement,
     Tooltip,
-    Legend
+    Legend,
+    Filler  
 );
 
 export default function ExpenseAnalysisPage() {

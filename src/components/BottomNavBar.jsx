@@ -1,5 +1,5 @@
 /** Imported modules */
-import { Home, User, Plus, BarChart2, FileUp } from "lucide-react";
+import { Home, User, Users, BarChart2, FileUp } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
 function BottomNavBar() {
@@ -28,10 +28,10 @@ function BottomNavBar() {
 
                 {/* Upload */}
                 <NavLink
-                    to="/budget"
-                    className={`flex flex-col items-center space-y-0.5 ${location.pathname === "/budget" ? "text-emerald-600" : "text-gray-500"}`}>
-                    <FileUp size={24} />
-                    <span className="text-xs font-medium">Budget</span>
+                    to="/groups"
+                    className={`flex flex-col items-center space-y-0.5 ${location.pathname === "/groups" ? "text-emerald-600" : "text-gray-500"}`}>
+                    <Users size={24} />
+                    <span className="text-xs font-medium">Group</span>
                 </NavLink>
 
                 {/* Account */}

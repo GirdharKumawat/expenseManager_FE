@@ -17,6 +17,7 @@ function GoogleLoginButton() {
     window.google.accounts.id.initialize({
       client_id: CLIENT_ID,
       callback: handleCredentialResponse,
+       ux_mode: "popup"
     });
 
     window.google.accounts.id.renderButton(

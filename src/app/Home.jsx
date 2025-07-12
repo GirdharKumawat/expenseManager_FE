@@ -3,14 +3,17 @@ import ExpenseCard from "../components/ExpenseCard";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import useExpense from "../features/expenses/useExpense";
-import { CalendarIcon, FileText, ChevronDown, Plus, X, DollarSign } from "lucide-react";
+import { CalendarIcon, FileText, ChevronDown, Plus, X } from "lucide-react";
 import { paymentModes, categories } from "../components/categories";
-
+import useGroup from "../features/group/useGroup";
 function Home() {
+    const { groups } = useSelector((state) => state.group);
+    const { expenses, loading } = useSelector((state) => state.expense);
     const [filteredExpenses, setFilteredExpenses] = useState([]);
     const [category, setCategory] = useState("all");
     const [paymentType, setPaymentType] = useState("all");
-    const navigate = useNavigate();
+
+    const { fetchGroups } = useGroup();
     const { getExpenses, deleteExpense, postExpense } = useExpense();
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -31,13 +34,12 @@ function Home() {
             [name]: value
         }));
     };
-
-    const { expenses, loading } = useSelector((state) => state.expense);
     useEffect(() => {
         if (expenses.length <= 0) {
             getExpenses();
         }
-    }, [ ]);
+        if (groups.length < 1) fetchGroups();
+    }, []);
 
     // Update filtered expenses when both category and paymentType change
     useEffect(() => {

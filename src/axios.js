@@ -1,6 +1,7 @@
 import axios from "axios";
-import {API_ENDPOINT} from "./key";
+import { API_ENDPOINT } from "./key";
 
+// Create axios instance with basic configuration
 const axiosAPI = axios.create({
     baseURL: API_ENDPOINT,
     withCredentials: true,
@@ -8,54 +9,68 @@ const axiosAPI = axios.create({
         "Content-Type": "application/json"
     }
 });
-
-// Simple flag to prevent multiple refresh attempts
+ 
 let isRefreshing = false;
+let refreshPromise = null;
 
-// Response interceptor for automatic token refresh
 axiosAPI.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        return response;
+    },
     async (error) => {
         const originalRequest = error.config;
-
-        // Handle 401 errors with automatic token refresh
+        
+        // If we get 401 (unauthorized) and haven't tried to refresh yet
         if (error.response?.status === 401 && !originalRequest._retry) {
-            // Skip refresh for auth endpoints to prevent loops
-            if (
-                originalRequest.url?.includes("token/refresh") ||
-                originalRequest.url?.includes("login") ||
-                originalRequest.url?.includes("register")
-            ) {
+            
+            // Prevent refresh attempts for the refresh endpoint itself
+            if (originalRequest.url?.includes("token/refresh")) {
+                window.location.href = "/login";
                 return Promise.reject(error);
             }
 
-            // Prevent multiple simultaneous refresh attempts
-            if (isRefreshing) {
-                return Promise.reject(error);
-            }
-
+            // Mark this request as retried
             originalRequest._retry = true;
+
+            // If we're already refreshing, wait for that refresh to complete
+            if (isRefreshing && refreshPromise) {
+                try {
+                    await refreshPromise;
+                    return axiosAPI(originalRequest);
+                } catch (refreshError) {
+                    window.location.href = "/login";
+                    return Promise.reject(refreshError);
+                }
+            }
+
+            // Start the refresh process
             isRefreshing = true;
+            refreshPromise = refreshToken();
 
             try {
-                // Attempt token refresh
-                await axiosAPI.post("api/auth/token/refresh/");
-
-                // Retry the original request
+                await refreshPromise;
                 return axiosAPI(originalRequest);
             } catch (refreshError) {
-                if (typeof window !== "undefined") {
-                 window.location.href = "/login";
-                }
-
+                window.location.href = "/login";
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
+                refreshPromise = null;
             }
         }
-
+        
         return Promise.reject(error);
     }
 );
+
+// Separate refresh function for better error handling
+async function refreshToken() {
+    try {
+        const response = await axiosAPI.post("api/auth/token/refresh/");
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
 
 export default axiosAPI;

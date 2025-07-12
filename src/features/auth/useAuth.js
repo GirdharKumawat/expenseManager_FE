@@ -1,6 +1,10 @@
 import axiosAPI from "../../axios";
 import { useDispatch } from "react-redux";
-import { setLoading, setIsAuthenticated, setUser } from "./authSlice";
+import {
+    setLoading,
+    setIsAuthenticated,
+    setUser
+} from "./authSlice";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 
@@ -32,10 +36,12 @@ export function useAuth() {
      * @returns {Promise<Object>} The login response data
      */
     const loginUser = async (credentials) => {
+       
         try {
             dispatch(setLoading(true));
             const res = await axiosAPI.post("api/auth/user/login/", credentials);
             const data = res.data;
+         
 
             // Dispatch actions to update state
             dispatch(setLoading(false));
@@ -63,7 +69,6 @@ export function useAuth() {
         } catch (err) {
             dispatch(setLoading(false));
             dispatch(setIsAuthenticated(false));
-            console.log(err);
             // toast notification for login failure
             toast.error("Login failed ", {
                 description: "Invalid credentials",

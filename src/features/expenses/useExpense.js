@@ -1,16 +1,11 @@
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-
-import { useAuth } from "../auth/useAuth";
 import { setExpenses, setLoading, removeExpense, addExpense } from "./expenseSlice";
 import axiosAPI from "../../axios";
 
 const useExpense = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
-
-    const { refreshUser, logoutUser } = useAuth();
+     
 
     // function to fetch expenses
     const getExpenses = async () => {
