@@ -19,9 +19,9 @@ function Groups() {
 
 
     useEffect(() => {
-        if(groups.length<1)
+         
         fetchGroups();
-    }, [groups]);
+    }, [ ]);
 
     const handleGroupClick = (group) => {
         setSelectedGroup(group);
