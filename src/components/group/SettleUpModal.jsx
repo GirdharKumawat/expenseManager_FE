@@ -1,4 +1,4 @@
-import { X, ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
+import { X, ArrowRight, TrendingUp, TrendingDown, Info } from "lucide-react";
 
 const SettleUpModal = ({ group, onClose, calculateSettleUp, generateSettleUpTransactions }) => {
     // Get settlement data
@@ -40,14 +40,6 @@ const SettleUpModal = ({ group, onClose, calculateSettleUp, generateSettleUpTran
 
                 {/* Content - matching existing cards style */}
                 <div className="max-h-96 overflow-y-auto p-4 sm:p-6">
-                    {/* Fair Share Summary */}
-                    <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                        <div className="text-center">
-                            <p className="text-sm text-slate-600">Fair share per person</p>
-                            <p className="text-2xl font-bold text-slate-900">₹{fairShare.toFixed(0)}</p>
-                        </div>
-                    </div>
-
                     {/* Member Balances - using existing card style */}
                     <div className="mb-6">
                         <h3 className="mb-3 text-lg font-semibold text-slate-800">Member Balances</h3>
@@ -66,9 +58,9 @@ const SettleUpModal = ({ group, onClose, calculateSettleUp, generateSettleUpTran
                                             </div>
                                             <div>
                                                 <p className="font-medium text-slate-800">{member.name}</p>
-                                                <p className="text-sm text-slate-600">
-                                                    Paid: ₹{member.paid.toFixed(0)}
-                                                </p>
+                                                <div className="text-xs text-slate-600">
+                                                    <div>Paid: ₹{member.paid.toFixed(0)}</div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -156,6 +148,23 @@ const SettleUpModal = ({ group, onClose, calculateSettleUp, generateSettleUpTran
                             </p>
                         </div>
                     )}
+
+                    {/* Balance Calculation Explanation */}
+                    <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                        <div className="flex items-start space-x-2">
+                            <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-blue-800">
+                                <p className="font-medium mb-1">How balances are calculated:</p>
+                                <p className="text-blue-700">
+                                    <strong>Net Balance = Amount Paid - Personal Share</strong>
+                                </p>
+                                <p className="text-xs text-blue-600 mt-1">
+                                    Personal Share is based on which expenses each member participated in, 
+                                    not the total group average.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Footer - matching existing button style */}

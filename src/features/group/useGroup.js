@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { setLoading, setGroups ,addOrReplaceGroup} from "./groupSlice";
+import { setLoading, setGroups, addOrReplaceGroup, removeGroup } from "./groupSlice";
 import axiosAPI from "../../axios";
 import { toast } from "sonner";
 
@@ -88,7 +88,35 @@ const useGroup = () => {
         
     };
 
-    return { fetchGroups, postGroup, postGroupExpense,postMember };
+    const deleteGroup = async (groupId) => {
+        dispatch(setLoading("deleteGroup"));
+        try {
+            await axiosAPI.delete(`api/deleteGroup/${groupId}/`);
+            
+            dispatch(setLoading(''));
+            dispatch(removeGroup(groupId));
+
+            toast.success("Group deleted successfully", {
+                duration: 3000
+            });
+        } catch (e) {
+            dispatch(setLoading(''));
+            toast.error("Failed to delete group", {
+                description: e.response?.data?.error || "Something went wrong",
+                duration: 3000
+            });
+        }
+    };
+
+   
+    return { 
+        fetchGroups, 
+        postGroup, 
+        postGroupExpense, 
+        postMember, 
+        deleteGroup, 
+    
+    };
 };
 
 export default useGroup;

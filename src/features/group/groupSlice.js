@@ -25,9 +25,13 @@ const groupSlice = createSlice({
 
             if (index === -1) state.groups.push(action.payload);
             else state.groups[index] = action.payload;
+        },
+        removeGroup(state, action) {
+            const groupId = action.payload;
+            state.groups = state.groups.filter((group) => group.id !== groupId);
         }
     }
 });
 
-export const { setLoading, setGroups ,addOrReplaceGroup} = groupSlice.actions;
+export const { setLoading, setGroups, addOrReplaceGroup, removeGroup } = groupSlice.actions;
 export default groupSlice.reducer;

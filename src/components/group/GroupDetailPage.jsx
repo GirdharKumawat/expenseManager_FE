@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Plus, TrendingDown, TrendingUp, Calculator, X } from "lucide-react";
+import { ArrowRight, Plus, TrendingDown, TrendingUp, Calculator, X, Trash2 } from "lucide-react";
 import AddExpenseModal from "./AddExpenseModal";
 import AddMember from "./AddMemberModal";
 import SettleUpModal from "./SettleUpModal";
+import DeleteGroupModal from "./DeleteGroupModal";
 import { useSelector } from "react-redux";
 import useGroup from "../../features/group/useGroup";
 import Loader from "../ui/Loader";
@@ -10,6 +11,7 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
     const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
     const [showAddMemberModal, setShowAddMemberModal] = useState(false);
     const [showSettleUpModal, setShowSettleUpModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [activeTab, setActiveTab] = useState("payments"); // New state for tabs
 
     const { loading, groups } = useSelector((state) => state.group);
@@ -28,7 +30,35 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
 
     useEffect(() => {}, [group]);
 
-    const { postGroupExpense } = useGroup();
+    const { postGroupExpense, deleteGroup } = useGroup();
+
+    // Calculate personal spending for each member
+    const calculatePersonalSpending = () => {
+        const personalSpending = {};
+        
+        // Initialize spending for all members
+        group.membersList.forEach(member => {
+            const memberName = member.name || member;
+            personalSpending[memberName] = 0;
+        });
+
+        // Calculate personal spending from expenses
+        const expenses = group.expenses || group.expensesList || [];
+        expenses.forEach(expense => {
+            const amount = parseFloat(expense.amount) || 0;
+            const splitMembers = expense.splitBetween || group.membersList.map(m => m.name || m);
+            const perPersonShare = amount / splitMembers.length;
+            
+            // Add share to each member who was part of this expense
+            splitMembers.forEach(memberName => {
+                if (personalSpending[memberName] !== undefined) {
+                    personalSpending[memberName] += perPersonShare;
+                }
+            });
+        });
+
+        return personalSpending;
+    };
 
     // Settlement calculation functions (integrated from template)
     const calculateGroupSettlements = (group) => {
@@ -160,6 +190,16 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
         postGroupExpense(expenseData);
     };
 
+    const handleDeleteGroup = () => {
+        setShowDeleteModal(true);
+    };
+
+    const confirmDeleteGroup = () => {
+        deleteGroup(group.id);
+        setShowDeleteModal(false);
+        onBack(); // Navigate back after deletion
+    };
+
     return (
         <div className="mb-16 min-h-screen bg-gray-50">
             <div className="bg-white p-4 text-black">
@@ -196,6 +236,12 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
                             className="flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-white transition-colors hover:bg-emerald-700 sm:px-4">
                             <Calculator className="h-5 w-5 sm:h-6 sm:w-6" />
                             <span className="ml-1 text-sm sm:text-base">Settle Up</span>
+                        </button>
+                        <button
+                            onClick={handleDeleteGroup}
+                            className="flex items-center justify-center rounded-lg bg-red-600 px-3 py-2 text-white transition-colors hover:bg-red-700 sm:px-4">
+                            <Trash2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                            <span className="ml-1 text-sm sm:text-base">Delete Group</span>
                         </button>
                     </div>
                 </div>
@@ -299,6 +345,45 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Personal Spending Summary Component */}
+                        <div className="mt-6">
+                            <h2 className="mb-3 text-lg font-semibold text-slate-800">🧾 Personal Spending Summary</h2>
+                            <p className="text-sm text-slate-600 mb-4">
+                                How much each member actually spent based on their share in group expenses
+                            </p>
+                            <div className="space-y-2">
+                                {(() => {
+                                    const personalSpending = calculatePersonalSpending();
+                                    return group.membersList.map((member) => (
+                                        <div
+                                            key={member.name}
+                                            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100">
+                                                        <span className="font-medium text-emerald-600">
+                                                            {member.name.charAt(0)}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium text-slate-800">
+                                                            {member.name}
+                                                        </span>
+                                                        <div className="text-xs text-slate-600">
+                                                            Based on their share in expenses
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <span className="text-lg font-bold text-slate-900">
+                                                    ₹{personalSpending[member.name].toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ));
+                                })()}
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -384,6 +469,14 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
                     onClose={() => setShowSettleUpModal(false)}
                     calculateSettleUp={calculateSettleUp}
                     generateSettleUpTransactions={generateSettleUpTransactions}
+                />
+            )}
+            {showDeleteModal && (
+                <DeleteGroupModal
+                    group={group}
+                    onConfirm={confirmDeleteGroup}
+                    onClose={() => setShowDeleteModal(false)}
+                    isLoading={loading === "deleteGroup"}
                 />
             )}
         </div>

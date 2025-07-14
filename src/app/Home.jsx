@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import ExpenseCard from "../components/ExpenseCard";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import useExpense from "../features/expenses/useExpense";
-import { CalendarIcon, FileText, ChevronDown, Plus, X } from "lucide-react";
+import { CalendarIcon, FileText, ChevronDown, Plus, X, Mic } from "lucide-react";
 import { paymentModes, categories } from "../components/categories";
 import useGroup from "../features/group/useGroup";
 function Home() {
@@ -12,6 +13,11 @@ function Home() {
     const [filteredExpenses, setFilteredExpenses] = useState([]);
     const [category, setCategory] = useState("all");
     const [paymentType, setPaymentType] = useState("all");
+
+    // Delete confirmation modal state
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [expenseToDelete, setExpenseToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const { fetchGroups } = useGroup();
     const { getExpenses, deleteExpense, postExpense } = useExpense();
@@ -96,6 +102,34 @@ function Home() {
             resetForm();
         }
     };
+
+    // Handle delete confirmation
+    const handleDeleteClick = (expense) => {
+        setExpenseToDelete(expense);
+        setShowDeleteModal(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!expenseToDelete) return;
+        
+        setIsDeleting(true);
+        try {
+            await deleteExpense(expenseToDelete.id);
+            setShowDeleteModal(false);
+            setExpenseToDelete(null);
+        } catch (error) {
+            console.error('Failed to delete expense:', error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setShowDeleteModal(false);
+        setExpenseToDelete(null);
+        setIsDeleting(false);
+    };
+
     const validateForm = () => {
         const errors = {};
 
@@ -219,30 +253,7 @@ function Home() {
                     </div>
                 </div>
 
-                {/* <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-slate-600">Categories</p>
-                                <p className="mt-1 text-2xl font-bold text-slate-900">
-                                    {Object.keys(categoryData).length}
-                                </p>
-                            </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                                <svg
-                                    className="h-6 w-6 text-green-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
-                    </div> */}
+               
             </div>
 
             {/* Floating Action Button */}
@@ -453,13 +464,14 @@ function Home() {
 
                             {/* Footer Actions */}
                             <div className="border-t border-gray-100 px-6 py-3">
-                                <div className="flex flex-col gap-3">
+                                <div className="flex  gap-3">
                                     <button
                                         onClick={handleAddExpense}
                                         disabled={loading === "post"}
                                         className="w-full rounded-xl bg-gradient-to-r from-green-600 to-green-500 px-6 py-2 text-lg font-semibold text-white shadow-lg transition-all hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50">
                                         {loading === "post" ? "Adding..." : "Add Expense"}
                                     </button>
+                                    
                                     <button
                                         onClick={handleAddMoreExpense}
                                         disabled={loading === "post"}
@@ -494,7 +506,7 @@ function Home() {
                     <ExpenseCard
                         key={index}
                         expense={expense}
-                        onDelete={() => deleteExpense(expense.id)}
+                        onDelete={handleDeleteClick}
                     />
                 ))
             ) : (
@@ -516,6 +528,15 @@ function Home() {
                     <p className="mt-1 text-sm text-green-600">Start tracking your spending now!</p>
                 </div>
             )}
+            
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={handleDeleteCancel}
+                onConfirm={handleDeleteConfirm}
+                expenseData={expenseToDelete}
+                isLoading={isDeleting}
+            />
         </div>
     );
 }

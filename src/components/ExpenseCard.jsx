@@ -73,7 +73,7 @@ const ExpenseCard = ({ expense ,onDelete}) => {
 
             {/* Delete button */}
             <button
-                onClick={() => onDelete(id)}
+                onClick={() => onDelete(expense)}
                 className="absolute -right-2 -top-2 rounded-full border border-slate-200 bg-white p-1.5 text-red-500 opacity-0 shadow-md transition-opacity hover:bg-red-100 hover:text-red-600 group-hover:opacity-100">
                 <Trash2 className="h-4 w-4" />
             </button>
@@ -82,3 +82,4 @@ const ExpenseCard = ({ expense ,onDelete}) => {
 };
 
 export default ExpenseCard;
+    

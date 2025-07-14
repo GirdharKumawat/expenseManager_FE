@@ -7,8 +7,8 @@ import Login from "@/app/Login.jsx";
 import { Outlet } from "react-router";
 import BottomNavBar from "@/components/BottomNavBar.jsx";
 import HeadNavBar from "@/components/HeadNavBar.jsx";
-import AddExpense from "@/app/AddExpense.jsx";
 import Account from "@/app/Account.jsx";
+import UserGuide from "@/components/UserGuide.jsx";
 import ProtectedComponents from "./components/ProtectedComponents.jsx";
 import { Toaster } from "sonner";
 
@@ -81,7 +81,7 @@ function App() {
                     </Route>
 
                     {/* Pages without Bottom Navigation Bar */}
-                    <Route path="/add" element={<AddExpense />} />
+                    <Route path="/guide" element={<UserGuide />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/login" element={<Login />} />
                 </Routes>
