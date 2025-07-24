@@ -32,33 +32,7 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
 
     const { postGroupExpense, deleteGroup } = useGroup();
 
-    // Calculate personal spending for each member
-    const calculatePersonalSpending = () => {
-        const personalSpending = {};
-        
-        // Initialize spending for all members
-        group.membersList.forEach(member => {
-            const memberName = member.name || member;
-            personalSpending[memberName] = 0;
-        });
 
-        // Calculate personal spending from expenses
-        const expenses = group.expenses || group.expensesList || [];
-        expenses.forEach(expense => {
-            const amount = parseFloat(expense.amount) || 0;
-            const splitMembers = expense.splitBetween || group.membersList.map(m => m.name || m);
-            const perPersonShare = amount / splitMembers.length;
-            
-            // Add share to each member who was part of this expense
-            splitMembers.forEach(memberName => {
-                if (personalSpending[memberName] !== undefined) {
-                    personalSpending[memberName] += perPersonShare;
-                }
-            });
-        });
-
-        return personalSpending;
-    };
 
     // Settlement calculation functions (integrated from template)
     const calculateGroupSettlements = (group) => {
@@ -354,8 +328,7 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
                             </p>
                             <div className="space-y-2">
                                 {(() => {
-                                    const personalSpending = calculatePersonalSpending();
-                                    return group.membersList.map((member) => (
+                                    return group.membersSpending.map((member) => (
                                         <div
                                             key={member.name}
                                             className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -376,7 +349,7 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
                                                     </div>
                                                 </div>
                                                 <span className="text-lg font-bold text-slate-900">
-                                                    ₹{personalSpending[member.name].toLocaleString()}
+                                                    ₹{member.total_spending.toLocaleString()}
                                                 </span>
                                             </div>
                                         </div>
