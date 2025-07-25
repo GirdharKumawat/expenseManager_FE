@@ -9,6 +9,7 @@ import { useAuth } from "../features/auth/useAuth";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import GoogleLoginButton from "./GoogleLoginButton";
+import TermsCheckbox from "./ui/TermsCheckbox";
 
 export function SignupForm({ className, ...props }) {
     const navigate = useNavigate();
@@ -19,13 +20,19 @@ export function SignupForm({ className, ...props }) {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [termsAccepted, setTermsAccepted] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!termsAccepted) {
+            alert("Please accept the Terms and Conditions and Privacy Policy to continue.");
+            return;
+        }
         signupUser({ username, email, password });
         setUsername("");
         setEmail("");
         setPassword("");
+        setTermsAccepted(false);
     };
 
     useEffect(() => {
@@ -110,10 +117,20 @@ export function SignupForm({ className, ...props }) {
                                     />
                                 </div>
 
+                                {/* Terms and Conditions Checkbox */}
+                                <div className="mt-4">
+                                    <TermsCheckbox 
+                                        isChecked={termsAccepted}
+                                        onCheck={setTermsAccepted}
+                                        required={true}
+                                    />
+                                </div>
+
                                 <Button
                                     type="submit"
                                     className="w-full bg-emerald-500 hover:bg-emerald-600"
-                                    onClick={handleSubmit}>
+                                    onClick={handleSubmit}
+                                    disabled={!termsAccepted}>
                                     Sign up
                                 </Button>
                             </div>
@@ -133,11 +150,6 @@ export function SignupForm({ className, ...props }) {
                     </form>
                 </CardContent>
             </Card>
-
-            <div className="text-balance text-center text-xs leading-relaxed text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
-                By clicking continue, you agree to our <a href="#">Terms of Service</a> and{" "}
-                <a href="#">Privacy Policy</a>.
-            </div>
         </div>
     );
 }

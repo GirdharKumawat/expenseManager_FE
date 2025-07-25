@@ -32,130 +32,34 @@ const GroupDetailPage = ({ currGroup, onBack }) => {
 
     const { postGroupExpense, deleteGroup } = useGroup();
 
-
-
-    // Settlement calculation functions (integrated from template)
-    const calculateGroupSettlements = (group) => {
-        const totalPaid = {};
-        const totalShare = {};
-        const netBalance = {};
-
-        // Initialize maps for all members
-        group.membersList.forEach(member => {
-            const memberName = member.name || member;
-            totalPaid[memberName] = 0;
-            totalShare[memberName] = 0;
-        });
-
-        // Calculate total paid by each member
-        const expenses = group.expenses || group.expensesList || [];
-        expenses.forEach(expense => {
-            const paidBy = expense.paidBy;
-            const amount = parseFloat(expense.amount) || 0;
-            
-            // Add to total paid
-            if (totalPaid[paidBy] !== undefined) {
-                totalPaid[paidBy] += amount;
-            }
-
-            // Calculate per person share for this expense
-            const splitMembers = expense.splitBetween || group.membersList.map(m => m.name || m);
-            const perPersonShare = amount / splitMembers.length;
-            
-            // Add share to each member
-            splitMembers.forEach(member => {
-                if (totalShare[member] !== undefined) {
-                    totalShare[member] += perPersonShare;
-                }
-            });
-        });
-
-        // Calculate net balances (positive = gets money, negative = owes money)
-        group.membersList.forEach(member => {
-            const memberName = member.name || member;
-            netBalance[memberName] = (totalPaid[memberName] || 0) - (totalShare[memberName] || 0);
-        });
-
-        // Split into creditors (positive balance) and debtors (negative balance)
-        const creditors = [];
-        const debtors = [];
-
-        Object.entries(netBalance).forEach(([name, balance]) => {
-            if (balance > 0.01) { // Avoid tiny amounts
-                creditors.push({ name, amount: balance });
-            } else if (balance < -0.01) {
-                debtors.push({ name, amount: -balance });
-            }
-        });
-
-        // Sort for optimal matching (largest amounts first)
-        creditors.sort((a, b) => b.amount - a.amount);
-        debtors.sort((a, b) => b.amount - a.amount);
-
-        // Generate minimal settlements using greedy algorithm
-        const settlements = [];
-        
-        for (let i = 0; i < debtors.length; i++) {
-            let debtor = debtors[i];
-            for (let j = 0; j < creditors.length && debtor.amount > 0.01; j++) {
-                let creditor = creditors[j];
-                if (creditor.amount < 0.01) continue;
-
-                const settleAmount = Math.min(debtor.amount, creditor.amount);
-                
-                if (settleAmount > 0.01) { // Only add meaningful transactions
-                    settlements.push({
-                        from: debtor.name,
-                        to: creditor.name,
-                        amount: settleAmount
-                    });
-
-                    debtor.amount -= settleAmount;
-                    creditor.amount -= settleAmount;
-                }
-            }
-        }
-
-        return {
-            totalPaid,
-            totalShare,
-            netBalances: netBalance,
-            settlements,
-            summary: {
-                totalGroupExpense: group.totalExpense || 0,
-                totalMembers: group.membersList.length,
-                fairSharePerPerson: (group.totalExpense || 0) / group.membersList.length,
-                transactionsNeeded: settlements.length
-            }
-        };
-    };
-
     // Calculate member payments for display
     const calculateMemberPayments = () => {
-        const settlements = calculateGroupSettlements(group);
-        
         return group.membersList.map(member => {
             const memberName = member.name || member;
             return {
                 id: member.id || memberName,
                 name: memberName,
-                paid: settlements.totalPaid[memberName] || 0,
-                share: settlements.totalShare[memberName] || 0,
-                balance: settlements.netBalances[memberName] || 0,
-                fairShare: settlements.summary.fairSharePerPerson
+                paid: member.totalPaid || 0,
+                share: member.totalShare || 0,
+                balance: member.balance || 0,
             };
         });
     };
 
-    // Calculate settle up data
+    // Calculate settle up data - use data from API
     const calculateSettleUp = () => {
-        return calculateGroupSettlements(group);
+        return {
+            settlements: group.settlements || [],
+            summary: {
+                totalGroupExpense: group.totalExpense || 0,
+                totalMembers: group.membersList.length,
+            }
+        };
     };
 
-    // Generate settlement transactions
+    // Generate settlement transactions - use data from API
     const generateSettleUpTransactions = () => {
-        const settlements = calculateGroupSettlements(group);
-        return settlements.settlements;
+        return group.settlements || [];
     };
 
     const handlePostexpense = () => {

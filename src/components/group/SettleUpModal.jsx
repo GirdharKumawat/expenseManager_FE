@@ -44,7 +44,7 @@ const SettleUpModal = ({ group, onClose, calculateSettleUp, generateSettleUpTran
                     <div className="mb-6">
                         <h3 className="mb-3 text-lg font-semibold text-slate-800">Member Balances</h3>
                         <div className="space-y-2">
-                            {memberBalances.map((member) => (
+                            {group.membersList.map((member) => (
                                 <div
                                     key={member.name}
                                     className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
@@ -59,7 +59,7 @@ const SettleUpModal = ({ group, onClose, calculateSettleUp, generateSettleUpTran
                                             <div>
                                                 <p className="font-medium text-slate-800">{member.name}</p>
                                                 <div className="text-xs text-slate-600">
-                                                    <div>Paid: ₹{member.paid.toFixed(0)}</div>
+                                                    <div>Paid: ₹{member.balance.toFixed(0)}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -138,33 +138,8 @@ const SettleUpModal = ({ group, onClose, calculateSettleUp, generateSettleUpTran
                             </div>
                         </div>
                     )}
-
-                    {transactions.length === 0 && (
-                        <div className="rounded-xl border border-gray-200 bg-green-50 p-6 text-center">
-                            <div className="mb-2 text-2xl">🎉</div>
-                            <h3 className="mb-1 text-lg font-semibold text-green-800">All Settled!</h3>
-                            <p className="text-sm text-green-600">
-                                Everyone has paid their fair share.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Balance Calculation Explanation */}
-                    <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
-                        <div className="flex items-start space-x-2">
-                            <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-blue-800">
-                                <p className="font-medium mb-1">How balances are calculated:</p>
-                                <p className="text-blue-700">
-                                    <strong>Net Balance = Amount Paid - Personal Share</strong>
-                                </p>
-                                <p className="text-xs text-blue-600 mt-1">
-                                    Personal Share is based on which expenses each member participated in, 
-                                    not the total group average.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+ 
+ 
                 </div>
 
                 {/* Footer - matching existing button style */}

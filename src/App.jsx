@@ -9,6 +9,8 @@ import BottomNavBar from "@/components/BottomNavBar.jsx";
 import HeadNavBar from "@/components/HeadNavBar.jsx";
 import Account from "@/app/Account.jsx";
 import UserGuide from "@/components/UserGuide.jsx";
+import TermsAndConditions from "@/components/TermsAndConditions.jsx";
+import PrivacyPolicy from "@/components/PrivacyPolicy.jsx";
 import ProtectedComponents from "./components/ProtectedComponents.jsx";
 import { Toaster } from "sonner";
 
@@ -82,6 +84,8 @@ function App() {
 
                     {/* Pages without Bottom Navigation Bar */}
                     <Route path="/guide" element={<UserGuide />} />
+                    <Route path="/terms" element={<TermsAndConditions />} />
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/login" element={<Login />} />
                 </Routes>
