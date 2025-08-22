@@ -8,11 +8,14 @@ import { CalendarIcon, FileText, ChevronDown, Plus, X, Mic } from "lucide-react"
 import { paymentModes, categories } from "../components/categories";
 import useGroup from "../features/group/useGroup";
 function Home() {
+
+    const months = [ "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     const { groups } = useSelector((state) => state.group);
     const { expenses, loading } = useSelector((state) => state.expense);
     const [filteredExpenses, setFilteredExpenses] = useState([]);
     const [category, setCategory] = useState("all");
     const [paymentType, setPaymentType] = useState("all");
+    const [monthFilter, setMonthFilter] = useState(`${months[new Date().getMonth()]} ${new Date().getFullYear()}`); // Default to current month
 
     // Delete confirmation modal state
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -24,6 +27,14 @@ function Home() {
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [formErrors, setFormErrors] = useState({});
+
+
+        // ExpensesMonths is ["Jan 2025", "Feb 2025", ...] based on expenses dates
+    
+        const expensesMonths = Array.from(new Set(expenses.map(expense => {
+            const date = new Date(expense.date);
+            return `${months[date.getMonth()]} ${date.getFullYear()}`;
+        })));
 
     const [newExpense, setNewExpense] = useState({
         amount: "",
@@ -52,12 +63,13 @@ function Home() {
         setFilteredExpenses(
             expenses.filter((expense) => {
                 const matchesCategory = category === "all" || expense.category === category;
-                const matchesPaymentType =
-                    paymentType === "all" || expense.paymentType === paymentType;
-                return matchesCategory && matchesPaymentType;
+                const matchesPaymentType = paymentType === "all" || expense.paymentType === paymentType;
+                const expenseDate = new Date(expense.date);
+                const matchesMonth = monthFilter==="all" || monthFilter === `${months[expenseDate.getMonth()]} ${expenseDate.getFullYear()}`;
+                return matchesCategory && matchesPaymentType && matchesMonth;
             })
         );
-    }, [category, paymentType, expenses]);
+    }, [category, paymentType, expenses, monthFilter]);
 
     const handleCategoryChange = (e) => {
         setCategory(e.target.value);
@@ -66,6 +78,10 @@ function Home() {
         setPaymentType(e.target.value);
     };
 
+    const handleMonthFilterChange = (e) => {
+        console.log(e.target.value);
+        setMonthFilter(e.target.value);
+    }
     const openDrawer = () => {
         setIsDrawerOpen(true);
         document.body.style.overflow = "hidden"; // Prevent background scroll
@@ -206,6 +222,26 @@ function Home() {
                     <option value="Rent">Rent</option>
                     <option value="Other">Other</option>
                 </select>
+
+
+                {/* select option filter  for date and defult is curr month   */}
+
+                <select
+                value={monthFilter}
+                    className="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
+                    onChange={handleMonthFilterChange}
+                >
+                    <option value="all">All Months</option>
+                    {expensesMonths.map((month) => (
+                        <option key={month} value={month}>
+                            {month}
+                        </option>   
+                    ))}
+                </select>
+                
+                 
+
+
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
