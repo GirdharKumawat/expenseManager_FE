@@ -12,7 +12,7 @@ const useGroup = () => {
          dispatch(setLoading('fetchGroups'));
         try {
             const response = await axiosAPI.get("api/getGroups/");
-             console.log(response.data.data)
+           
             dispatch(setGroups(response.data.data))
             dispatch(setLoading(''));
 

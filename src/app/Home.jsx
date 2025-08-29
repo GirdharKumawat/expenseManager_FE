@@ -193,11 +193,11 @@ function Home() {
     const totalExpenses = calculateTotalExpenses();
 
     return (
-        <div className="mb-16 space-y-4 bg-white p-5">
+    <div className="mb-16 space-y-4 bg-white p-5">
             <h1 className="text-2xl font-bold text-green-600">Your Expenses</h1>
-            <div className="flex items-start space-x-4">
+            <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start md:space-x-4 md:gap-0 w-full">
                 <select
-                    className="block rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
+                    className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
                     value={paymentType}
                     onChange={handlePaymentTypeChange}>
                     <option value="all">All Payment Methods</option>
@@ -209,7 +209,7 @@ function Home() {
                 </select>
 
                 <select
-                    className="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
+                    className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
                     value={category}
                     onChange={handleCategoryChange}>
                     <option value="all">All Categories</option>
@@ -223,25 +223,19 @@ function Home() {
                     <option value="Other">Other</option>
                 </select>
 
-
-                {/* select option filter  for date and defult is curr month   */}
-
+                {/* select option filter  for date and default is curr month   */}
                 <select
-                value={monthFilter}
-                    className="rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
+                    value={monthFilter}
+                    className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
                     onChange={handleMonthFilterChange}
                 >
                     <option value="all">All Months</option>
                     {expensesMonths.map((month) => (
                         <option key={month} value={month}>
                             {month}
-                        </option>   
+                        </option>
                     ))}
                 </select>
-                
-                 
-
-
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
