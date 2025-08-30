@@ -32,6 +32,33 @@ ChartJS.register(
 
 export default function ExpenseAnalysisPage() {
     const { expenses, loading } = useSelector((state) => state.expense);
+
+    // Responsive filter states for paymentType, category, and month
+    const [paymentType, setPaymentType] = useState("all");
+    const [category, setCategory] = useState("all");
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    // Compute available months from expenses
+    const expensesMonths = Array.from(new Set(expenses.map(expense => {
+        const date = new Date(expense.date);
+        return `${months[date.getMonth()]} ${date.getFullYear()}`;
+    })));
+    // Default to current month if available, else 'all'
+    const defaultMonth = `${months[new Date().getMonth()]} ${new Date().getFullYear()}`;
+    const [monthFilter, setMonthFilter] = useState(expensesMonths.includes(defaultMonth) ? defaultMonth : "all");
+
+    // Handlers for filter changes
+    const handlePaymentTypeChange = (e) => setPaymentType(e.target.value);
+    const handleCategoryChange = (e) => setCategory(e.target.value);
+    const handleMonthFilterChange = (e) => setMonthFilter(e.target.value);
+
+    // Filtered expenses based on filters
+    const filteredExpenses = expenses.filter((expense) => {
+        const matchesCategory = category === "all" || expense.category === category;
+        const matchesPaymentType = paymentType === "all" || expense.paymentType === paymentType;
+        const expenseDate = new Date(expense.date);
+        const matchesMonth = monthFilter === "all" || monthFilter === `${months[expenseDate.getMonth()]} ${expenseDate.getFullYear()}`;
+        return matchesCategory && matchesPaymentType && matchesMonth;
+    });
     const { getExpenses } = useExpense();
 
     const [viewMode, setViewMode] = useState("monthly");
@@ -44,9 +71,10 @@ export default function ExpenseAnalysisPage() {
         }
     }, [expenses]);
 
+    // Use filteredExpenses for analysis
     const groupByCategory = () => {
         const categories = {};
-        expenses.forEach(({ category, amount }) => {
+        filteredExpenses.forEach(({ category, amount }) => {
             categories[category] = (categories[category] || 0) + parseFloat(amount);
         });
         return categories;
@@ -54,49 +82,31 @@ export default function ExpenseAnalysisPage() {
 
     const groupByTime = () => {
         const timeMap = new Map();
-        
-        expenses.forEach(({ date, amount }) => {
+        filteredExpenses.forEach(({ date, amount }) => {
             const dateObj = new Date(date);
             let key, sortKey;
-
             if (viewMode === "monthly") {
-                // Create a sortable key (YYYY-MM format) and display key
-                sortKey = dateObj.toISOString().slice(0, 7); // "2024-01" format
-                key = dateObj.toLocaleDateString("en-US", {
-                    month: "short",
-                    year: "numeric"
-                });
+                sortKey = dateObj.toISOString().slice(0, 7);
+                key = dateObj.toLocaleDateString("en-US", { month: "short", year: "numeric" });
             } else {
-                // For daily view, sort by full date
-                sortKey = dateObj.toISOString().slice(0, 10); // "2024-01-15" format
-                key = dateObj.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric"
-                });
+                sortKey = dateObj.toISOString().slice(0, 10);
+                key = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
             }
-
             if (!timeMap.has(sortKey)) {
                 timeMap.set(sortKey, { displayKey: key, amount: 0 });
             }
             timeMap.get(sortKey).amount += parseFloat(amount);
         });
-
-        // Sort by the sortKey (chronological order)
-        const sortedEntries = Array.from(timeMap.entries()).sort((a, b) => 
-            a[0].localeCompare(b[0])
-        );
-
-        // Return sorted object with display keys
+        const sortedEntries = Array.from(timeMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
         const result = {};
         sortedEntries.forEach(([sortKey, { displayKey, amount }]) => {
             result[displayKey] = amount;
         });
-
         return result;
     };
 
     const calculateTotalExpenses = () => {
-        return expenses.reduce((total, expense) => total + parseFloat(expense.amount), 0);
+        return filteredExpenses.reduce((total, expense) => total + parseFloat(expense.amount), 0);
     };
 
     const getMostExpensiveCategory = () => {
@@ -316,6 +326,52 @@ export default function ExpenseAnalysisPage() {
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Responsive Filter Row */}
+            <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start md:space-x-4 md:gap-0 w-full">
+                    <select
+                        className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
+                        value={paymentType}
+                        onChange={handlePaymentTypeChange}>
+                        <option value="all">All Payment Methods</option>
+                        {typeof paymentModes !== 'undefined' && paymentModes.map((mode) => (
+                            <option key={mode.value} value={mode.value}>
+                                {mode.value}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
+                        value={category}
+                        onChange={handleCategoryChange}>
+                        <option value="all">All Categories</option>
+                        <option value="Food">Food</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Health">Health</option>
+                        <option value="Rent">Rent</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    {/* select option filter  for date and default is curr month   */}
+                    <select
+                        value={monthFilter}
+                        className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
+                        onChange={handleMonthFilterChange}
+                    >
+                        <option value="all">All Months</option>
+                        {expensesMonths.map((month) => (
+                            <option key={month} value={month}>
+                                {month}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
