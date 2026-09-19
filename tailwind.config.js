@@ -4,10 +4,15 @@ export default {
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+            },
             borderRadius: {
                 lg: "var(--radius)",
                 md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)"
+                sm: "calc(var(--radius) - 4px)",
+                '2xl': '1rem',
+                '3xl': '1.5rem',
             },
             colors: {
                 background: "hsl(var(--background))",
@@ -50,6 +55,12 @@ export default {
                     4: "hsl(var(--chart-4))",
                     5: "hsl(var(--chart-5))"
                 }
+            },
+            boxShadow: {
+                'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.08)',
+                'glow': '0 0 20px -5px rgba(16, 185, 129, 0.3)',
+                'glow-lg': '0 10px 30px -5px rgba(16, 185, 129, 0.4)',
+                'card-hover': '0 12px 24px -10px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.02)',
             }
         }
     },

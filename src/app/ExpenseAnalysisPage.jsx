@@ -1,4 +1,3 @@
- 
 import { Pie, Bar, Line } from "react-chartjs-2";
 import {
     Chart as ChartJS,
@@ -10,13 +9,14 @@ import {
     PointElement,
     Tooltip,
     Legend,
-    Filler  
-
+    Filler
 } from "chart.js";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import useExpense from "../features/expenses/useExpense";
 import { useSelector } from "react-redux";
+import { paymentModes, categories } from "../components/categories";
+import { PieChart, BarChart2, TrendingUp, Wallet, Layers, ChevronDown, RefreshCw } from "lucide-react";
 
 ChartJS.register(
     ArcElement,
@@ -27,57 +27,60 @@ ChartJS.register(
     PointElement,
     Tooltip,
     Legend,
-    Filler  
+    Filler
 );
 
 export default function ExpenseAnalysisPage() {
     const { expenses, loading } = useSelector((state) => state.expense);
 
-    // Responsive filter states for paymentType, category, and month
     const [paymentType, setPaymentType] = useState("all");
     const [category, setCategory] = useState("all");
-    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    // Compute available months from expenses
-    const expensesMonths = Array.from(new Set(expenses.map(expense => {
-        const date = new Date(expense.date);
-        return `${months[date.getMonth()]} ${date.getFullYear()}`;
-    })));
-    // Default to current month if available, else 'all'
-    const defaultMonth = `${months[new Date().getMonth()]} ${new Date().getFullYear()}`;
-    const [monthFilter, setMonthFilter] = useState(expensesMonths.includes(defaultMonth) ? defaultMonth : "all");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    // Handlers for filter changes
+    const expensesMonths = Array.from(
+        new Set(
+            expenses.map((expense) => {
+                const date = new Date(expense.date);
+                return `${months[date.getMonth()]} ${date.getFullYear()}`;
+            })
+        )
+    );
+    const defaultMonth = `${months[new Date().getMonth()]} ${new Date().getFullYear()}`;
+    const [monthFilter, setMonthFilter] = useState(
+        expensesMonths.includes(defaultMonth) ? defaultMonth : "all"
+    );
+
     const handlePaymentTypeChange = (e) => setPaymentType(e.target.value);
     const handleCategoryChange = (e) => setCategory(e.target.value);
     const handleMonthFilterChange = (e) => setMonthFilter(e.target.value);
 
-    // Filtered expenses based on filters
     const filteredExpenses = expenses.filter((expense) => {
         const matchesCategory = category === "all" || expense.category === category;
         const matchesPaymentType = paymentType === "all" || expense.paymentType === paymentType;
         const expenseDate = new Date(expense.date);
-        const matchesMonth = monthFilter === "all" || monthFilter === `${months[expenseDate.getMonth()]} ${expenseDate.getFullYear()}`;
+        const matchesMonth =
+            monthFilter === "all" ||
+            monthFilter === `${months[expenseDate.getMonth()]} ${expenseDate.getFullYear()}`;
         return matchesCategory && matchesPaymentType && matchesMonth;
     });
-    const { getExpenses } = useExpense();
 
+    const { getExpenses } = useExpense();
     const [viewMode, setViewMode] = useState("monthly");
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         if (!expenses || expenses.length === 0) {
-            getExpenses()
+            getExpenses();
         }
     }, [expenses]);
 
-    // Use filteredExpenses for analysis
     const groupByCategory = () => {
-        const categories = {};
+        const catMap = {};
         filteredExpenses.forEach(({ category, amount }) => {
-            categories[category] = (categories[category] || 0) + parseFloat(amount);
+            catMap[category] = (catMap[category] || 0) + parseFloat(amount);
         });
-        return categories;
+        return catMap;
     };
 
     const groupByTime = () => {
@@ -106,7 +109,7 @@ export default function ExpenseAnalysisPage() {
     };
 
     const calculateTotalExpenses = () => {
-        return filteredExpenses.reduce((total, expense) => total + parseFloat(expense.amount), 0);
+        return filteredExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
     };
 
     const getMostExpensiveCategory = () => {
@@ -115,47 +118,29 @@ export default function ExpenseAnalysisPage() {
             (a, b) => (categoryData[a] > categoryData[b] ? a : b),
             ""
         );
-        return { category: maxCategory, amount: categoryData[maxCategory] };
+        return { category: maxCategory || "None", amount: categoryData[maxCategory] || 0 };
     };
 
-    // Loading state
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
-                <div className="space-y-4 text-center">
-                    <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-                    <p className="font-medium text-slate-600">Loading your expense analysis...</p>
+            <div className="flex min-h-screen items-center justify-center p-4">
+                <div className="space-y-3 text-center">
+                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent"></div>
+                    <p className="text-sm font-semibold text-slate-600">Analyzing your expenses...</p>
                 </div>
             </div>
         );
     }
 
-    // Error state
     if (error) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-                <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-                        <svg
-                            className="h-8 w-8 text-red-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                            />
-                        </svg>
-                    </div>
-                    <h3 className="mb-2 text-xl font-semibold text-slate-800">
-                        Something went wrong
-                    </h3>
-                    <p className="mb-6 text-slate-600">{error}</p>
+            <div className="flex min-h-screen items-center justify-center p-4">
+                <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl border border-slate-200">
+                    <h3 className="mb-2 text-xl font-bold text-slate-800">Something went wrong</h3>
+                    <p className="mb-6 text-sm text-slate-600">{error}</p>
                     <button
                         onClick={getExpenses}
-                        className="rounded-lg bg-blue-500 px-6 py-2 font-medium text-white transition-colors hover:bg-blue-600">
+                        className="rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-emerald-700">
                         Try Again
                     </button>
                 </div>
@@ -163,28 +148,16 @@ export default function ExpenseAnalysisPage() {
         );
     }
 
-    // No data state
     if (expenses.length === 0) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-                <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-                        <svg
-                            className="h-8 w-8 text-blue-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                            />
-                        </svg>
+            <div className="flex min-h-screen items-center justify-center p-4">
+                <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-xl border border-slate-200/80">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                        <PieChart className="h-8 w-8" />
                     </div>
-                    <h3 className="mb-2 text-xl font-semibold text-slate-800">No expenses found</h3>
-                    <p className="text-slate-600">
-                        Start adding expenses to see your analysis here.
+                    <h3 className="mb-2 text-xl font-bold text-slate-900">No expenses to analyze</h3>
+                    <p className="text-sm text-slate-500">
+                        Add some expenses first to unlock powerful visual insights and spending trends.
                     </p>
                 </div>
             </div>
@@ -196,7 +169,6 @@ export default function ExpenseAnalysisPage() {
     const totalExpenses = calculateTotalExpenses();
     const topCategory = getMostExpensiveCategory();
 
-    // Enhanced chart options
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -204,31 +176,35 @@ export default function ExpenseAnalysisPage() {
             legend: {
                 position: "bottom",
                 labels: {
-                    padding: 20,
+                    padding: 16,
                     usePointStyle: true,
                     font: {
-                        size: 12,
-                        family: "'Inter', sans-serif"
+                        size: 11,
+                        family: "'Plus Jakarta Sans', sans-serif",
+                        weight: '600'
                     }
                 }
             },
             tooltip: {
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
-                titleColor: "#fff",
-                bodyColor: "#fff",
+                backgroundColor: "rgba(15, 23, 42, 0.9)",
+                titleColor: "#f8fafc",
+                bodyColor: "#f8fafc",
                 borderColor: "rgba(255, 255, 255, 0.1)",
                 borderWidth: 1,
-                cornerRadius: 8,
+                cornerRadius: 12,
+                padding: 12,
                 bodyFont: {
-                    size: 13
+                    size: 13,
+                    family: "'Plus Jakarta Sans', sans-serif"
                 },
                 titleFont: {
-                    size: 14,
-                    weight: "bold"
+                    size: 13,
+                    weight: "bold",
+                    family: "'Plus Jakarta Sans', sans-serif"
                 },
                 callbacks: {
                     label: function (context) {
-                        return `${context.label}: ₹${context.parsed.toFixed(2)}`;
+                        return ` ${context.label}: ₹${Number(context.parsed || context.raw).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
                     }
                 }
             }
@@ -241,18 +217,19 @@ export default function ExpenseAnalysisPage() {
             {
                 data: Object.values(categoryData),
                 backgroundColor: [
+                    "#10B981",
+                    "#06B6D4",
                     "#6366F1",
                     "#8B5CF6",
                     "#EC4899",
-                    "#EF4444",
                     "#F59E0B",
-                    "#10B981",
-                    "#06B6D4",
+                    "#EF4444",
                     "#84CC16",
                     "#F97316"
                 ],
-                borderWidth: 0,
-                hoverOffset: 8
+                borderWidth: 2,
+                borderColor: "#ffffff",
+                hoverOffset: 6
             }
         ]
     };
@@ -261,12 +238,12 @@ export default function ExpenseAnalysisPage() {
         labels: Object.keys(timeData),
         datasets: [
             {
-                label: `${viewMode === "daily" ? "Daily" : "Monthly"} Expenses`,
+                label: `${viewMode === "daily" ? "Daily" : "Monthly"} Spend`,
                 data: Object.values(timeData),
-                backgroundColor: "rgba(99, 102, 241, 0.8)",
-                borderColor: "#6366F1",
+                backgroundColor: "rgba(16, 185, 129, 0.85)",
+                borderColor: "#10B981",
                 borderWidth: 1,
-                borderRadius: 6,
+                borderRadius: 8,
                 borderSkipped: false
             }
         ]
@@ -276,213 +253,188 @@ export default function ExpenseAnalysisPage() {
         labels: Object.keys(timeData),
         datasets: [
             {
-                label: "Expense Trend",
+                label: "Spending Trend",
                 data: Object.values(timeData),
-                borderColor: "#6366F1",
-                backgroundColor: "rgba(99, 102, 241, 0.1)",
+                borderColor: "#059669",
+                backgroundColor: "rgba(16, 185, 129, 0.12)",
                 fill: true,
-                tension: 0.4,
+                tension: 0.35,
                 pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: "#6366F1",
-                pointBorderColor: "#fff",
+                pointHoverRadius: 7,
+                pointBackgroundColor: "#059669",
+                pointBorderColor: "#ffffff",
                 pointBorderWidth: 2
             }
         ]
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-            {/* Header Section */}
-            <div className="border-b border-slate-200 bg-white shadow-sm">
-                <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 pb-28 space-y-6">
+            {/* Header & View Mode Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                        <span>Expense Analytics</span>
+                    </h1>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                        Visual breakdown of your category distribution and spending trajectory
+                    </p>
+                </div>
+
+                <div className="inline-flex items-center rounded-xl bg-slate-200/80 p-1 border border-slate-300/50 self-start sm:self-auto">
+                    <button
+                        onClick={() => setViewMode("monthly")}
+                        className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+                            viewMode === "monthly"
+                                ? "bg-white text-slate-900 shadow-xs"
+                                : "text-slate-600 hover:text-slate-900"
+                        }`}>
+                        Monthly View
+                    </button>
+                    <button
+                        onClick={() => setViewMode("daily")}
+                        className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+                            viewMode === "daily"
+                                ? "bg-white text-slate-900 shadow-xs"
+                                : "text-slate-600 hover:text-slate-900"
+                        }`}>
+                        Daily View
+                    </button>
+                </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-3 shadow-xs backdrop-blur-md">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div className="relative">
+                        <select
+                            value={monthFilter}
+                            onChange={handleMonthFilterChange}
+                            className="block w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-3.5 pr-10 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                            <option value="all">📅 All Months</option>
+                            {expensesMonths.map((m) => (
+                                <option key={m} value={m}>
+                                    📅 {m}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </div>
+
+                    <div className="relative">
+                        <select
+                            value={category}
+                            onChange={handleCategoryChange}
+                            className="block w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-3.5 pr-10 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                            <option value="all">🏷️ All Categories</option>
+                            {categories.map((cat) => (
+                                <option key={cat.label} value={cat.label}>
+                                    {cat.label}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </div>
+
+                    <div className="relative">
+                        <select
+                            value={paymentType}
+                            onChange={handlePaymentTypeChange}
+                            className="block w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-3.5 pr-10 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                            <option value="all">💳 All Payment Methods</option>
+                            {paymentModes.map((mode) => (
+                                <option key={mode.value} value={mode.value}>
+                                    {mode.value}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </div>
+                </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-500/10 to-white p-5 shadow-xs">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold text-slate-900">Expense Analysis</h1>
-                            <p className="mt-2 text-slate-600">
-                                Track and analyze your spending patterns
+                            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Total Analyzed</p>
+                            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+                                ₹{totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </h3>
+                        </div>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20">
+                            <Wallet className="h-5.5 w-5.5" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-500/10 to-white p-5 shadow-xs">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-purple-700">Highest Category</p>
+                            <h3 className="mt-1 text-xl font-extrabold text-slate-900 truncate max-w-[150px]">
+                                {topCategory.category}
+                            </h3>
+                            <p className="text-xs font-bold text-purple-600 mt-0.5">
+                                ₹{topCategory.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-md shadow-purple-500/20">
+                            <TrendingUp className="h-5.5 w-5.5" />
+                        </div>
+                    </div>
+                </div>
 
-                        {/* View Mode Selector */}
-                        <div className="flex items-center gap-3 rounded-lg bg-slate-100 p-1">
-                            <button
-                                onClick={() => setViewMode("monthly")}
-                                className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                                    viewMode === "monthly"
-                                        ? "bg-white text-slate-900 shadow-sm"
-                                        : "text-slate-600 hover:text-slate-900"
-                                }`}>
-                                Monthly
-                            </button>
-                            <button
-                                onClick={() => setViewMode("daily")}
-                                className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                                    viewMode === "daily"
-                                        ? "bg-white text-slate-900 shadow-sm"
-                                        : "text-slate-600 hover:text-slate-900"
-                                }`}>
-                                Daily
-                            </button>
+                <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-500/10 to-white p-5 shadow-xs">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Active Categories</p>
+                            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+                                {Object.keys(categoryData).length}
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-0.5">Out of {categories.length} total</p>
+                        </div>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+                            <Layers className="h-5.5 w-5.5" />
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Responsive Filter Row */}
-            <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start md:space-x-4 md:gap-0 w-full">
-                    <select
-                        className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
-                        value={paymentType}
-                        onChange={handlePaymentTypeChange}>
-                        <option value="all">All Payment Methods</option>
-                        {typeof paymentModes !== 'undefined' && paymentModes.map((mode) => (
-                            <option key={mode.value} value={mode.value}>
-                                {mode.value}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
-                        value={category}
-                        onChange={handleCategoryChange}>
-                        <option value="all">All Categories</option>
-                        <option value="Food">Food</option>
-                        <option value="Transport">Transport</option>
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Utilities">Utilities</option>
-                        <option value="Shopping">Shopping</option>
-                        <option value="Health">Health</option>
-                        <option value="Rent">Rent</option>
-                        <option value="Other">Other</option>
-                    </select>
-
-                    {/* select option filter  for date and default is curr month   */}
-                    <select
-                        value={monthFilter}
-                        className="block w-full md:w-auto rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200"
-                        onChange={handleMonthFilterChange}
-                    >
-                        <option value="all">All Months</option>
-                        {expensesMonths.map((month) => (
-                            <option key={month} value={month}>
-                                {month}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-
-            <div className="mx-auto max-w-7xl  space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                   
-                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-slate-600">Total Expenses</p>
-                                <p className="mt-1 text-2xl font-bold text-slate-900">
-                                    &#8377;{totalExpenses.toFixed(2)}
-                                </p>
-                            </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                                    <span className="text-lg font-bold text-blue-600">₹</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-slate-600">Top Category</p>
-                                <p className="mt-1 text-lg font-bold text-slate-900">
-                                    {topCategory.category}
-                                </p>
-                                <p className="text-sm text-slate-500">
-                                    &#8377;{topCategory.amount?.toFixed(2)}
-                                </p>
-                            </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
-                                <svg
-                                    className="h-6 w-6 text-purple-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-slate-600">Categories</p>
-                                <p className="mt-1 text-2xl font-bold text-slate-900">
-                                    {Object.keys(categoryData).length}
-                                </p>
-                            </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                                <svg
-                                    className="h-6 w-6 text-green-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
+            {/* Charts Grid */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs backdrop-blur-md">
+                    <h2 className="mb-4 text-base font-bold text-slate-900 flex items-center gap-2">
+                        <PieChart className="h-4 w-4 text-emerald-600" />
+                        <span>Category Breakdown</span>
+                    </h2>
+                    <div className="h-72">
+                        <Pie data={pieChartData} options={chartOptions} />
                     </div>
                 </div>
 
-                {/* Charts Grid */}
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                    {/* Category Distribution */}
-                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900">
-                            Spending by Category
-                        </h2>
-                        <div className="h-80">
-                            <Pie data={pieChartData} options={chartOptions} />
-                        </div>
-                    </div>
-
-                    {/* Time-based Breakdown */}
-                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                        <h2 className="mb-4 text-lg font-semibold text-slate-900">
-                            {viewMode === "daily" ? "Daily" : "Monthly"} Breakdown
-                        </h2>
-                        <div className="h-80">
-                            <Bar data={barChartData} options={chartOptions} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Trend Chart - Full Width */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                    <h2 className="mb-4 text-lg font-semibold text-slate-900">Expense Trend</h2>
-                    <div className="h-80">
-                        <Line data={lineChartData} options={chartOptions} />
+                <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs backdrop-blur-md">
+                    <h2 className="mb-4 text-base font-bold text-slate-900 flex items-center gap-2">
+                        <BarChart2 className="h-4 w-4 text-emerald-600" />
+                        <span>{viewMode === "daily" ? "Daily" : "Monthly"} Expenditure</span>
+                    </h2>
+                    <div className="h-72">
+                        <Bar data={barChartData} options={chartOptions} />
                     </div>
                 </div>
             </div>
 
-            {/* Bottom spacing for mobile navigation */}
-            <div className="h-32 lg:h-8"></div>
+            {/* Full Width Line Chart */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs backdrop-blur-md">
+                <h2 className="mb-4 text-base font-bold text-slate-900 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    <span>Spending Trajectory</span>
+                </h2>
+                <div className="h-72">
+                    <Line data={lineChartData} options={chartOptions} />
+                </div>
+            </div>
         </div>
     );
 }

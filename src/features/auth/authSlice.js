@@ -21,6 +21,8 @@ const initialState = {
     id: null,
     username: "",
     email: "",     
+    firstName: "",
+    lastName: "",
 };
 
 const authSlice = createSlice({
@@ -36,10 +38,12 @@ const authSlice = createSlice({
         },
 
         setUser(state, action) {
-            const { id, username, email } = action.payload;
+            const { id, username, email, first_name, last_name } = action.payload;
             if (id !== undefined) state.id = id;
             if (username !== undefined) state.username = username;
             if (email !== undefined) state.email = email;
+            if (first_name !== undefined) state.firstName = first_name;
+            if (last_name !== undefined) state.lastName = last_name;
         },
 
     },

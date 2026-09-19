@@ -171,6 +171,8 @@ export function useAuth() {
             const res = await axiosAPI.get("api/profile");
             dispatch(setLoading(false));
             dispatch(setUser(res.data.data));
+            
+            console.log("Fetched user data:", res.data.data);
             dispatch(setIsAuthenticated(true));
         } catch (error) {
             // If token expired (401 error), try to refresh

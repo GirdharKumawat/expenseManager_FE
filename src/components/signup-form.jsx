@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../features/auth/useAuth";
 import { useSelector } from "react-redux";
-import { useEffect } from "react";
 import GoogleLoginButton from "./GoogleLoginButton";
 import TermsCheckbox from "./ui/TermsCheckbox";
+import { User, Mail, Lock } from "lucide-react";
 
 export function SignupForm({ className, ...props }) {
     const navigate = useNavigate();
@@ -37,113 +37,118 @@ export function SignupForm({ className, ...props }) {
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate("/"); // Redirect to home after successful login
+            navigate("/");
         }
     }, [isAuthenticated, navigate]);
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             {loading && (
-                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-                    <div className="animate-fadeIn flex flex-col items-center space-y-4 rounded-xl bg-white p-6 shadow-md">
-                        <svg
-                            className="h-12 w-12 animate-spin text-green-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"></circle>
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v8H4z"></path>
-                        </svg>
-                        <p className="text-lg font-semibold text-green-700">Loading...</p>
-                        <p className="text-sm text-green-600">Please wait while we sign you in</p>
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-xs">
+                    <div className="flex flex-col items-center space-y-3 rounded-2xl bg-white p-6 shadow-2xl border border-slate-100">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+                        <p className="text-sm font-bold text-slate-800">Creating your account...</p>
                     </div>
                 </div>
             )}
-            <Card>
-                <CardHeader className="text-center">
-                    <CardTitle className="text-xl">Sign up</CardTitle>
-                    <CardDescription>Create an account to get started.</CardDescription>
+            <Card className="rounded-3xl border border-slate-200/90 bg-white/90 shadow-xl backdrop-blur-md overflow-hidden">
+                <CardHeader className="text-center pb-2">
+                    <CardTitle className="text-2xl font-extrabold text-slate-900">Create Account</CardTitle>
+                    <CardDescription className="text-xs font-medium text-slate-500">
+                        Sign up to start tracking expenses & splitting bills
+                    </CardDescription>
                 </CardHeader>
 
-                <CardContent>
-                    <form>
-                        <div className="grid gap-6">
-                            <div className="grid gap-6">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="username">Username</Label>
+                <CardContent className="pt-4">
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="username" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Username
+                                </Label>
+                                <div className="relative">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                        <User className="h-4 w-4 text-slate-400" />
+                                    </div>
                                     <Input
                                         id="username"
                                         type="text"
-                                        placeholder="Username"
+                                        placeholder="Choose a username"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
                                         required
-                                        className="focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        className="rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
                                     />
                                 </div>
+                            </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
+                            <div className="grid gap-2">
+                                <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Email Address
+                                </Label>
+                                <div className="relative">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                        <Mail className="h-4 w-4 text-slate-400" />
+                                    </div>
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="email@example.com"
+                                        placeholder="name@example.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                        className="focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        className="rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
                                     />
                                 </div>
+                            </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="password">Password</Label>
+                            <div className="grid gap-2">
+                                <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Password
+                                </Label>
+                                <div className="relative">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                        <Lock className="h-4 w-4 text-slate-400" />
+                                    </div>
                                     <Input
                                         id="password"
                                         type="password"
-                                        placeholder="**********"
+                                        placeholder="Create a strong password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                        className="focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        className="rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
                                     />
                                 </div>
-
-                                {/* Terms and Conditions Checkbox */}
-                                <div className="mt-4">
-                                    <TermsCheckbox 
-                                        isChecked={termsAccepted}
-                                        onCheck={setTermsAccepted}
-                                        required={true}
-                                    />
-                                </div>
-
-                                <Button
-                                    type="submit"
-                                    className="w-full bg-emerald-500 hover:bg-emerald-600"
-                                    onClick={handleSubmit}
-                                    disabled={!termsAccepted}>
-                                    Sign up
-                                </Button>
                             </div>
-                            <div className="flex w-full max-w-xs items-center">
-                                <div className="h-px flex-grow bg-gray-300" />
-                                <span className="mx-4 text-sm text-gray-500">or</span>
-                                <div className="h-px flex-grow bg-gray-300" />
+
+                            <div className="py-1">
+                                <TermsCheckbox 
+                                    isChecked={termsAccepted}
+                                    onCheck={setTermsAccepted}
+                                    required={true}
+                                />
                             </div>
-                            <GoogleLoginButton/>
-                            <div className="text-center text-sm">
+
+                            <Button
+                                type="submit"
+                                className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 hover:from-emerald-700 hover:to-teal-600 active:scale-98 transition-all disabled:opacity-50"
+                                disabled={!termsAccepted}>
+                                Create Account
+                            </Button>
+
+                            <div className="flex w-full items-center justify-center my-1">
+                                <div className="h-px flex-grow bg-slate-200" />
+                                <span className="mx-4 text-xs font-semibold text-slate-400 uppercase">or</span>
+                                <div className="h-px flex-grow bg-slate-200" />
+                            </div>
+
+                            <GoogleLoginButton />
+
+                            <div className="text-center text-xs font-semibold text-slate-600 mt-1">
                                 Already have an account?{" "}
-                                <Link to="/login" className="underline underline-offset-4">
-                                    Login
+                                <Link to="/login" className="text-emerald-600 hover:underline font-bold">
+                                    Log in
                                 </Link>
                             </div>
                         </div>

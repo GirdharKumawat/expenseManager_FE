@@ -544,7 +544,7 @@ const UserGuide = () => {
                     </p>
                     <div className="flex items-center space-x-2 text-emerald-600">
                         <Info className="h-5 w-5" />
-                        <span className="text-sm font-medium">Happy expense tracking! 🎉</span>
+                        <span className="text-sm font-medium"> Happy expense tracking!</span>
                     </div>
                 </div>
             </div>
