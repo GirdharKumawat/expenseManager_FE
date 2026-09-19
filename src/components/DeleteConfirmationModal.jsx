@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
 
 const DeleteConfirmationModal = ({ 
@@ -16,12 +17,13 @@ const DeleteConfirmationModal = ({
         }
     };
 
-    return (
+    return createPortal(
         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/65 backdrop-blur-md p-4 animate-backdropFade"
             onClick={handleOverlayClick}
         >
-            <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden border border-slate-100 animate-slideUp">
+            <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden border border-slate-100 animate-modalPop">
+
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                     <div className="flex items-center space-x-3">
@@ -98,8 +100,10 @@ const DeleteConfirmationModal = ({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
 export default DeleteConfirmationModal;
+

@@ -90,6 +90,16 @@
     100% { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes modalPop {
+    0% { opacity: 0; transform: scale(0.94) translateY(16px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes backdropFade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
 @keyframes pulseGlow {
     0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
     50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.7); }
@@ -101,6 +111,14 @@
 
 .animate-slideUp {
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-modalPop {
+    animation: modalPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-backdropFade {
+    animation: backdropFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-pulseGlow {
