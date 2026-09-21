@@ -35,6 +35,7 @@ export default function ExpenseAnalysisPage() {
 
     const [paymentType, setPaymentType] = useState("all");
     const [category, setCategory] = useState("all");
+    const [transactionType, setTransactionType] = useState("all"); // "all", "DEBIT", "CREDIT"
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     const expensesMonths = Array.from(
@@ -57,11 +58,12 @@ export default function ExpenseAnalysisPage() {
     const filteredExpenses = expenses.filter((expense) => {
         const matchesCategory = category === "all" || expense.category === category;
         const matchesPaymentType = paymentType === "all" || expense.paymentType === paymentType;
+        const matchesTxType = transactionType === "all" || (expense.transaction_type || "DEBIT") === transactionType;
         const expenseDate = new Date(expense.date);
         const matchesMonth =
             monthFilter === "all" ||
             monthFilter === `${months[expenseDate.getMonth()]} ${expenseDate.getFullYear()}`;
-        return matchesCategory && matchesPaymentType && matchesMonth;
+        return matchesCategory && matchesPaymentType && matchesTxType && matchesMonth;
     });
 
     const { getExpenses } = useExpense();
@@ -109,7 +111,15 @@ export default function ExpenseAnalysisPage() {
     };
 
     const calculateTotalExpenses = () => {
-        return filteredExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+        return filteredExpenses
+            .filter((e) => (e.transaction_type || "DEBIT") === "DEBIT")
+            .reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+    };
+
+    const calculateTotalIncome = () => {
+        return filteredExpenses
+            .filter((e) => e.transaction_type === "CREDIT")
+            .reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
     };
 
     const getMostExpensiveCategory = () => {
@@ -167,6 +177,8 @@ export default function ExpenseAnalysisPage() {
     const categoryData = groupByCategory();
     const timeData = groupByTime();
     const totalExpenses = calculateTotalExpenses();
+    const totalIncome = calculateTotalIncome();
+    const netSavings = totalIncome - totalExpenses;
     const topCategory = getMostExpensiveCategory();
 
     const chartOptions = {
@@ -238,7 +250,7 @@ export default function ExpenseAnalysisPage() {
         labels: Object.keys(timeData),
         datasets: [
             {
-                label: `${viewMode === "daily" ? "Daily" : "Monthly"} Spend`,
+                label: `${viewMode === "daily" ? "Daily" : "Monthly"} Volume`,
                 data: Object.values(timeData),
                 backgroundColor: "rgba(16, 185, 129, 0.85)",
                 borderColor: "#10B981",
@@ -253,7 +265,7 @@ export default function ExpenseAnalysisPage() {
         labels: Object.keys(timeData),
         datasets: [
             {
-                label: "Spending Trend",
+                label: "Cashflow Trajectory",
                 data: Object.values(timeData),
                 borderColor: "#059669",
                 backgroundColor: "rgba(16, 185, 129, 0.12)",
@@ -274,10 +286,10 @@ export default function ExpenseAnalysisPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>Expense Analytics</span>
+                        <span>Expense & Cashflow Analytics</span>
                     </h1>
                     <p className="text-sm font-medium text-slate-500 mt-1">
-                        Visual breakdown of your category distribution and spending trajectory
+                        Visual breakdown of your debits, credits, category distribution, and spending trajectory
                     </p>
                 </div>
 
@@ -305,7 +317,7 @@ export default function ExpenseAnalysisPage() {
 
             {/* Filter Bar */}
             <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-3 shadow-xs backdrop-blur-md">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                     <div className="relative">
                         <select
                             value={monthFilter}
@@ -338,6 +350,18 @@ export default function ExpenseAnalysisPage() {
 
                     <div className="relative">
                         <select
+                            value={transactionType}
+                            onChange={(e) => setTransactionType(e.target.value)}
+                            className="block w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-3.5 pr-10 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                            <option value="all">🔄 All Types (Debit & Credit)</option>
+                            <option value="DEBIT">🔴 Expenses Only (Debit)</option>
+                            <option value="CREDIT">🟢 Income Only (Credit)</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </div>
+
+                    <div className="relative">
+                        <select
                             value={paymentType}
                             onChange={handlePaymentTypeChange}
                             className="block w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-3.5 pr-10 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
@@ -355,32 +379,29 @@ export default function ExpenseAnalysisPage() {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-500/10 to-white p-5 shadow-xs">
+                <div className="rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-500/10 to-white p-5 shadow-xs">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Total Analyzed</p>
+                            <p className="text-xs font-bold uppercase tracking-wider text-rose-700">Total Expenses (Debits)</p>
                             <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
                                 ₹{totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </h3>
                         </div>
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-md shadow-rose-500/20">
                             <Wallet className="h-5.5 w-5.5" />
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-500/10 to-white p-5 shadow-xs">
+                <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-500/10 to-white p-5 shadow-xs">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-purple-700">Highest Category</p>
-                            <h3 className="mt-1 text-xl font-extrabold text-slate-900 truncate max-w-[150px]">
-                                {topCategory.category}
+                            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Total Income (Credits)</p>
+                            <h3 className="mt-1 text-2xl font-extrabold text-emerald-700">
+                                ₹{totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </h3>
-                            <p className="text-xs font-bold text-purple-600 mt-0.5">
-                                ₹{topCategory.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
                         </div>
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-md shadow-purple-500/20">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20">
                             <TrendingUp className="h-5.5 w-5.5" />
                         </div>
                     </div>
@@ -389,11 +410,11 @@ export default function ExpenseAnalysisPage() {
                 <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-500/10 to-white p-5 shadow-xs">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Active Categories</p>
-                            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
-                                {Object.keys(categoryData).length}
+                            <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Net Cash Savings</p>
+                            <h3 className={`mt-1 text-2xl font-extrabold ${netSavings >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
+                                ₹{netSavings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </h3>
-                            <p className="text-xs text-slate-500 mt-0.5">Out of {categories.length} total</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Credits - Debits</p>
                         </div>
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
                             <Layers className="h-5.5 w-5.5" />

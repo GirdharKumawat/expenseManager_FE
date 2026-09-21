@@ -87,6 +87,56 @@ const categories = [
         emoji: "🏠"
     },
     {
+        label: "Salary",
+        icon: Sparkles,
+        color: "bg-emerald-100",
+        textColor: "text-emerald-700",
+        gradient: "from-emerald-600 to-green-500",
+        badgeBg: "bg-emerald-50 text-emerald-800 border-emerald-200/80",
+        glow: "shadow-emerald-500/20",
+        emoji: "💼"
+    },
+    {
+        label: "Freelance",
+        icon: Sparkles,
+        color: "bg-teal-100",
+        textColor: "text-teal-700",
+        gradient: "from-teal-500 to-cyan-600",
+        badgeBg: "bg-teal-50 text-teal-800 border-teal-200/80",
+        glow: "shadow-teal-500/20",
+        emoji: "💻"
+    },
+    {
+        label: "Investment",
+        icon: Sparkles,
+        color: "bg-blue-100",
+        textColor: "text-blue-700",
+        gradient: "from-blue-600 to-indigo-600",
+        badgeBg: "bg-blue-50 text-blue-800 border-blue-200/80",
+        glow: "shadow-blue-500/20",
+        emoji: "📈"
+    },
+    {
+        label: "Refund",
+        icon: Sparkles,
+        color: "bg-emerald-100",
+        textColor: "text-emerald-600",
+        gradient: "from-emerald-500 to-teal-500",
+        badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
+        glow: "shadow-emerald-500/20",
+        emoji: "🔄"
+    },
+    {
+        label: "Gift",
+        icon: Sparkles,
+        color: "bg-purple-100",
+        textColor: "text-purple-700",
+        gradient: "from-purple-500 to-pink-500",
+        badgeBg: "bg-purple-50 text-purple-800 border-purple-200/80",
+        glow: "shadow-purple-500/20",
+        emoji: "🎁"
+    },
+    {
         label: "Other",
         icon: Package,
         color: "bg-slate-100",

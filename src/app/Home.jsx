@@ -5,6 +5,7 @@ import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import useExpense from "../features/expenses/useExpense";
+import StatementVerificationModal from "../components/StatementVerificationModal";
 import {
     CalendarIcon,
     FileText,
@@ -19,11 +20,14 @@ import {
     Check,
     CreditCard,
     ArrowUpRight,
+    ArrowDownRight,
     SlidersHorizontal,
     RotateCcw,
     ArrowUpDown,
     Filter,
-    Tag
+    Tag,
+    Upload,
+    FileSpreadsheet
 } from "lucide-react";
 import { paymentModes, categories } from "../components/categories";
 import useGroup from "../features/group/useGroup";
@@ -38,9 +42,13 @@ function Home() {
     const [filteredExpenses, setFilteredExpenses] = useState([]);
     const [selectedCategories, setSelectedCategories] = useState([]); // Multiple category selection array
     const [paymentType, setPaymentType] = useState("all");
+    const [transactionTypeFilter, setTransactionTypeFilter] = useState("all"); // "all", "DEBIT", "CREDIT"
     const [searchQuery, setSearchQuery] = useState("");
     const [monthFilter, setMonthFilter] = useState("all");
     const [sortBy, setSortBy] = useState("newest"); // "newest", "oldest", "amount-high", "amount-low"
+
+    // Statement upload modal state
+    const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
 
     // Delete confirmation modal state
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -71,7 +79,8 @@ function Home() {
         category: "",
         description: "",
         date: new Date().toISOString().slice(0, 10),
-        paymentType: ""
+        paymentType: "",
+        transaction_type: "DEBIT"
     });
 
     const handleInputChange = (e) => {
@@ -106,13 +115,16 @@ function Home() {
         };
     }, []);
 
-    // Filter logic supporting multiple selected categories, paymentType, monthFilter and search query
+    // Filter logic supporting multiple selected categories, paymentType, transactionTypeFilter, monthFilter and search query
     useEffect(() => {
         setFilteredExpenses(
             expenses.filter((expense) => {
                 const matchesCategory =
                     selectedCategories.length === 0 || selectedCategories.includes(expense.category);
                 const matchesPaymentType = paymentType === "all" || expense.paymentType === paymentType;
+                const matchesTxType =
+                    transactionTypeFilter === "all" ||
+                    (expense.transaction_type || "DEBIT") === transactionTypeFilter;
                 const expenseDate = new Date(expense.date);
                 const matchesMonth =
                     monthFilter === "all" ||
@@ -125,24 +137,26 @@ function Home() {
                     expense.paymentType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     String(expense.amount).includes(searchQuery);
 
-                return matchesCategory && matchesPaymentType && matchesMonth && matchesSearch;
+                return matchesCategory && matchesPaymentType && matchesTxType && matchesMonth && matchesSearch;
             })
         );
-    }, [selectedCategories, paymentType, expenses, monthFilter, searchQuery]);
+    }, [selectedCategories, paymentType, transactionTypeFilter, expenses, monthFilter, searchQuery]);
 
     // Active filter counter & reset helper
     const activeFilterCount = useMemo(() => {
         let count = 0;
         if (selectedCategories.length > 0) count += selectedCategories.length;
         if (paymentType !== "all") count++;
+        if (transactionTypeFilter !== "all") count++;
         if (monthFilter !== "all") count++;
         if (searchQuery.trim() !== "") count++;
         return count;
-    }, [selectedCategories, paymentType, monthFilter, searchQuery]);
+    }, [selectedCategories, paymentType, transactionTypeFilter, monthFilter, searchQuery]);
 
     const resetAllFilters = () => {
         setSelectedCategories([]);
         setPaymentType("all");
+        setTransactionTypeFilter("all");
         setMonthFilter("all");
         setSearchQuery("");
     };
@@ -199,7 +213,8 @@ function Home() {
             category: "",
             description: "",
             date: new Date().toISOString().slice(0, 10),
-            paymentType: ""
+            paymentType: "",
+            transaction_type: "DEBIT"
         });
         setFormErrors({});
     };
@@ -273,7 +288,15 @@ function Home() {
     };
 
     const calculateTotalExpenses = () => {
-        return filteredExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+        return filteredExpenses
+            .filter((e) => (e.transaction_type || "DEBIT") === "DEBIT")
+            .reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+    };
+
+    const calculateTotalIncome = () => {
+        return filteredExpenses
+            .filter((e) => e.transaction_type === "CREDIT")
+            .reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
     };
 
     const getMostExpensiveCategory = () => {
@@ -287,6 +310,8 @@ function Home() {
 
     const topCategory = getMostExpensiveCategory();
     const totalExpenses = calculateTotalExpenses();
+    const totalIncome = calculateTotalIncome();
+    const netBalance = totalIncome - totalExpenses;
 
     // Percentage of total spent by top category
     const topCategoryPercentage = useMemo(() => {
@@ -471,6 +496,27 @@ function Home() {
                                 </div>
                             </div>
 
+                            {/* Transaction Type (Credit / Debit Filter) */}
+                            <div className="space-y-1">
+                                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                                    Transaction Type
+                                </label>
+                                <div className="relative">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                                        <ArrowUpDown className="h-3.5 w-3.5" />
+                                    </div>
+                                    <select
+                                        value={transactionTypeFilter}
+                                        onChange={(e) => setTransactionTypeFilter(e.target.value)}
+                                        className="block w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-9 pr-8 text-xs font-bold text-slate-800 transition-all hover:bg-white focus:border-emerald-500 focus:bg-white focus:outline-none">
+                                        <option value="all">🔄 Type: All Types</option>
+                                        <option value="DEBIT">🔴 Expenses (Debit Only)</option>
+                                        <option value="CREDIT">🟢 Income (Credit Only)</option>
+                                    </select>
+                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                                </div>
+                            </div>
+
                             {/* Sort Order */}
                             <div className="space-y-1">
                                 <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -514,6 +560,15 @@ function Home() {
                                         </button>
                                     </span>
                                 ))}
+
+                                {transactionTypeFilter !== "all" && (
+                                    <span className="inline-flex items-center space-x-1 rounded-lg bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                                        <span>🔄 {transactionTypeFilter}</span>
+                                        <button onClick={() => setTransactionTypeFilter("all")} className="text-emerald-600 hover:text-emerald-900 cursor-pointer">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </span>
+                                )}
 
                                 {monthFilter !== "all" && (
                                     <span className="inline-flex items-center space-x-1 rounded-lg bg-blue-50 border border-blue-200/80 px-2 py-0.5 text-[11px] font-bold text-blue-800">
@@ -564,11 +619,18 @@ function Home() {
                                     👋
                                 </h1>
                                 <p className="text-xs sm:text-sm font-medium text-slate-300 max-w-md">
-                                    Track, filter, and manage your expenses with real-time financial control.
+                                    Track, filter, and verify your debits, credits, and bank statements automatically.
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex flex-wrap items-center gap-3 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsStatementModalOpen(true)}
+                                    className="inline-flex items-center space-x-2 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 px-4 py-3 text-xs sm:text-sm font-bold text-white shadow-md transition-all cursor-pointer">
+                                    <Upload className="h-4 w-4 text-emerald-300" />
+                                    <span>Import Statement (AI)</span>
+                                </button>
                                 <button
                                     type="button"
                                     onClick={openDrawer}
@@ -582,73 +644,69 @@ function Home() {
 
                     {/* KPI Stat Cards Grid */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        {/* Card 1: Total Spent */}
-                        <div className="group relative overflow-hidden rounded-3xl border border-emerald-100/80 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-white p-5 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-emerald-300/80 hover:-translate-y-0.5">
+                        {/* Card 1: Total Spent (Debits) */}
+                        <div className="group relative overflow-hidden rounded-3xl border border-rose-100/80 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-white p-5 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-rose-300/80 hover:-translate-y-0.5">
                             <div className="flex items-start justify-between">
                                 <div>
                                     <div className="flex items-center space-x-1.5">
-                                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
-                                            Total Spent
+                                        <span className="h-2 w-2 rounded-full bg-rose-500" />
+                                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-rose-800">
+                                            Total Spent (Debits)
                                         </p>
                                     </div>
                                     <h3 className="mt-1.5 text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                                         ₹{totalExpenses.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </h3>
                                     <p className="text-[11px] font-bold text-slate-500 mt-1.5 flex items-center gap-1">
-                                        <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-                                        <span>{filteredExpenses.length} transaction{filteredExpenses.length !== 1 ? "s" : ""}</span>
+                                        <ArrowDownRight className="h-3.5 w-3.5 text-rose-600" />
+                                        <span>Total Expenses Out</span>
                                     </p>
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-500/25 transition-transform duration-300 group-hover:scale-110">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-500 text-white shadow-md shadow-rose-500/25 transition-transform duration-300 group-hover:scale-110">
                                     <Wallet className="h-5.5 w-5.5" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Card 2: Top Category */}
-                        <div className="group relative overflow-hidden rounded-3xl border border-purple-100/80 bg-gradient-to-br from-purple-500/10 via-indigo-500/5 to-white p-5 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-purple-300/80 hover:-translate-y-0.5">
+                        {/* Card 2: Total Income (Credits) */}
+                        <div className="group relative overflow-hidden rounded-3xl border border-emerald-100/80 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-white p-5 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-emerald-300/80 hover:-translate-y-0.5">
                             <div className="flex items-start justify-between">
                                 <div>
                                     <div className="flex items-center space-x-1.5">
-                                        <span className="h-2 w-2 rounded-full bg-purple-500" />
-                                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-purple-800">
-                                            Top Category
+                                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
+                                            Total Income (Credits)
                                         </p>
                                     </div>
-                                    <h3 className="mt-1.5 text-lg sm:text-xl font-black text-slate-900 tracking-tight truncate max-w-[140px]">
-                                        {topCategory.category}
+                                    <h3 className="mt-1.5 text-xl sm:text-2xl font-black text-emerald-700 tracking-tight">
+                                        ₹{totalIncome.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </h3>
-                                    <p className="text-xs font-extrabold text-purple-600 mt-1">
-                                        ₹{topCategory.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        {topCategoryPercentage > 0 && (
-                                            <span className="ml-1 text-[10px] font-bold text-purple-400">
-                                                ({topCategoryPercentage}%)
-                                            </span>
-                                        )}
+                                    <p className="text-[11px] font-bold text-slate-500 mt-1.5 flex items-center gap-1">
+                                        <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" />
+                                        <span>Total Additions/Salary</span>
                                     </p>
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 text-white shadow-md shadow-purple-500/25 transition-transform duration-300 group-hover:scale-110">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-500/25 transition-transform duration-300 group-hover:scale-110">
                                     <TrendingUp className="h-5.5 w-5.5" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Card 3: Period / Active Filter */}
+                        {/* Card 3: Net Cash Balance */}
                         <div className="group relative overflow-hidden rounded-3xl border border-blue-100/80 bg-gradient-to-br from-blue-500/10 via-sky-500/5 to-white p-5 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-blue-300/80 hover:-translate-y-0.5">
                             <div className="flex items-start justify-between">
                                 <div>
                                     <div className="flex items-center space-x-1.5">
                                         <span className="h-2 w-2 rounded-full bg-blue-500" />
                                         <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-800">
-                                            Active View
+                                            Net Cash Balance
                                         </p>
                                     </div>
-                                    <h3 className="mt-1.5 text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                                        {monthFilter === "all" ? "All Time" : monthFilter}
+                                    <h3 className={`mt-1.5 text-xl sm:text-2xl font-black tracking-tight ${netBalance >= 0 ? "text-slate-900" : "text-rose-600"}`}>
+                                        ₹{netBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </h3>
                                     <p className="text-[11px] font-semibold text-slate-500 mt-1 truncate max-w-[140px]">
-                                        Cat: <span className="font-bold text-slate-800">{selectedCategories.length === 0 ? "All" : selectedCategories.join(", ")}</span>
+                                        Net = Credits - Debits
                                     </p>
                                 </div>
                                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-500 text-white shadow-md shadow-blue-500/25 transition-transform duration-300 group-hover:scale-110">
@@ -793,6 +851,38 @@ function Home() {
 
                             {/* Scrollable Form Body */}
                             <div className="p-6 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
+                                {/* Transaction Type Selection */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                        Transaction Type *
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewExpense((prev) => ({ ...prev, transaction_type: "DEBIT" }))}
+                                            className={`flex items-center justify-center space-x-2 rounded-2xl py-2.5 px-4 text-xs font-extrabold transition-all cursor-pointer ${
+                                                newExpense.transaction_type === "DEBIT"
+                                                    ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
+                                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                            }`}>
+                                            <ArrowDownRight className="h-4 w-4 stroke-[3]" />
+                                            <span>Debit (Expense)</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewExpense((prev) => ({ ...prev, transaction_type: "CREDIT" }))}
+                                            className={`flex items-center justify-center space-x-2 rounded-2xl py-2.5 px-4 text-xs font-extrabold transition-all cursor-pointer ${
+                                                newExpense.transaction_type === "CREDIT"
+                                                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                            }`}>
+                                            <ArrowUpRight className="h-4 w-4 stroke-[3]" />
+                                            <span>Credit (Income)</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 {/* Amount Input with Quick Presets */}
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -870,7 +960,7 @@ function Home() {
                                             name="description"
                                             value={newExpense.description}
                                             onChange={handleInputChange}
-                                            placeholder="What did you spend on?"
+                                            placeholder="What is this transaction for?"
                                             className={`block w-full rounded-2xl border py-2.5 pl-10 pr-4 text-sm font-medium transition-all ${
                                                 formErrors.description
                                                     ? "border-rose-300 bg-rose-50/50 text-rose-900 focus:ring-rose-500"
@@ -938,7 +1028,7 @@ function Home() {
                                     onClick={handleAddExpense}
                                     disabled={loading === "post"}
                                     className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 hover:from-emerald-700 hover:to-teal-600 active:scale-98 transition-all disabled:opacity-50 cursor-pointer">
-                                    {loading === "post" ? "Adding..." : "Add Expense"}
+                                    {loading === "post" ? "Adding..." : "Add Transaction"}
                                 </button>
 
                                 <button
@@ -961,6 +1051,12 @@ function Home() {
                 onConfirm={handleDeleteConfirm}
                 expenseData={expenseToDelete}
                 isLoading={isDeleting}
+            />
+
+            {/* Statement Verification Modal */}
+            <StatementVerificationModal
+                isOpen={isStatementModalOpen}
+                onClose={() => setIsStatementModalOpen(false)}
             />
         </div>
     );
