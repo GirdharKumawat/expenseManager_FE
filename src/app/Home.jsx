@@ -63,6 +63,7 @@ function Home() {
     const [formErrors, setFormErrors] = useState({});
 
     // Compute distinct months from expenses
+    const currentMonth = new Date().getMonth();
     const expensesMonths = useMemo(() => {
         return Array.from(
             new Set(
@@ -461,7 +462,11 @@ function Home() {
                                         value={monthFilter}
                                         onChange={handleMonthFilterChange}
                                         className="block w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-9 pr-8 text-xs font-bold text-slate-800 transition-all hover:bg-white focus:border-emerald-500 focus:bg-white focus:outline-none">
+                                        set this to current month as default, and add all time option
                                         <option value="all">📅 Month: All Time</option>
+                                        <option value={currentMonth} selected>
+                                            📅 {currentMonth}
+                                        </option>
                                         {expensesMonths.map((m) => (
                                             <option key={m} value={m}>
                                                 📅 {m}
