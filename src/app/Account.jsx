@@ -99,6 +99,20 @@ function Account() {
                             </div>
                             <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all" />
                         </button>
+
+                        {/*   current   versions */}
+                        <div className="flex w-full items-center justify-between p-4 text-left">
+                            <div className="flex items-center space-x-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-600">
+                                    <User className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-800">Current Version</h3>
+                                    <p className="text-xs text-slate-400">v1.0.0</p>
+                                </div>
+                            </div>
+                        </div>  
+                      
                     </div>
 
                     {/* Logout Button */}
