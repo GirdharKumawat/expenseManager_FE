@@ -108,7 +108,7 @@ function Account() {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-800">Current Version</h3>
-                                    <p className="text-xs text-slate-400">v1.0.0</p>
+                                    <p className="text-xs text-slate-400">v1.0.1</p>
                                 </div>
                             </div>
                         </div>  

@@ -39,12 +39,14 @@ function Home() {
     const { expenses, loading } = useSelector((state) => state.expense);
     const { username, firstName, lastName } = useSelector((state) => state.auth);
 
+    const defaultMonth = `${months[new Date().getMonth()]} ${new Date().getFullYear()}`;
+
     const [filteredExpenses, setFilteredExpenses] = useState([]);
     const [selectedCategories, setSelectedCategories] = useState([]); // Multiple category selection array
     const [paymentType, setPaymentType] = useState("all");
     const [transactionTypeFilter, setTransactionTypeFilter] = useState("all"); // "all", "DEBIT", "CREDIT"
     const [searchQuery, setSearchQuery] = useState("");
-    const [monthFilter, setMonthFilter] = useState("all");
+    const [monthFilter, setMonthFilter] = useState(defaultMonth);
     const [sortBy, setSortBy] = useState("newest"); // "newest", "oldest", "amount-high", "amount-low"
 
     // Statement upload modal state
@@ -63,17 +65,16 @@ function Home() {
     const [formErrors, setFormErrors] = useState({});
 
     // Compute distinct months from expenses
-    const currentMonth = new Date().getMonth();
     const expensesMonths = useMemo(() => {
-        return Array.from(
-            new Set(
-                expenses.map((expense) => {
-                    const date = new Date(expense.date);
-                    return `${months[date.getMonth()]} ${date.getFullYear()}`;
-                })
-            )
+        const monthSet = new Set(
+            expenses.map((expense) => {
+                const date = new Date(expense.date);
+                return `${months[date.getMonth()]} ${date.getFullYear()}`;
+            })
         );
-    }, [expenses]);
+        monthSet.add(defaultMonth);
+        return Array.from(monthSet);
+    }, [expenses, defaultMonth]);
 
     const [newExpense, setNewExpense] = useState({
         amount: "",
@@ -462,11 +463,8 @@ function Home() {
                                         value={monthFilter}
                                         onChange={handleMonthFilterChange}
                                         className="block w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-9 pr-8 text-xs font-bold text-slate-800 transition-all hover:bg-white focus:border-emerald-500 focus:bg-white focus:outline-none">
-                                        set this to current month as default, and add all time option
                                         <option value="all">📅 Month: All Time</option>
-                                        <option value={currentMonth} selected>
-                                            📅 {currentMonth}
-                                        </option>
+                                        
                                         {expensesMonths.map((m) => (
                                             <option key={m} value={m}>
                                                 📅 {m}
